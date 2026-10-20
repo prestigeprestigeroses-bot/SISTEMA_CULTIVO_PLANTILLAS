@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#17382b" />
+    <meta name="description" content="Control semanal de proyección y producción de flor por finca, bloque y variedad." />
+    <title>Flor Semanal · Proyecciones</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 48 48" fill="none">
+              <path d="M23.7 39.5c0-13.7 6.7-23.2 17.3-29.1-2.3 11.7-7.7 20.1-17.3 29.1Z" fill="currentColor" opacity=".92"/>
+              <path d="M22.6 36.7C20.2 24.8 14.9 17.1 6 12c.7 11.4 6.4 20.3 16.6 24.7Z" fill="currentColor" opacity=".58"/>
+              <path d="M23.3 15.2c0 5.2-4.1 8.6-4.1 8.6s-4.1-3.4-4.1-8.6 4.1-8.7 4.1-8.7 4.1 3.5 4.1 8.7Z" fill="currentColor"/>
+              <path d="M24 41V20" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div>
+            <strong>FLOR</strong>
+            <span>SEMANAL</span>
+          </div>
+        </div>
+
+        <nav aria-label="Navegación principal">
+          <button class="nav-item active" data-view="projection">
+            <span class="nav-icon">▦</span>
+            Proyección semanal
+          </button>
+          <button class="nav-item" data-view="history">
+            <span class="nav-icon">↺</span>
+            Historial
+          </button>
+        </nav>
+
+        <div class="sidebar-note">
+          <span class="status-dot"></span>
+          <div>
+            <strong id="dbStatus">Modo local</strong>
+            <small id="dbStatusDetail">Datos temporales</small>
+          </div>
+        </div>
+      </aside>
+
+      <main>
+        <header class="topbar">
+          <button class="mobile-brand" aria-label="Ir a proyección">F<span>·</span></button>
+          <div class="farm-switcher">
+            <label for="farmSelect">Finca activa</label>
+            <div class="select-wrap">
+              <span class="farm-dot"></span>
+              <select id="farmSelect" aria-label="Seleccionar finca"></select>
+              <span class="chevron">⌄</span>
+            </div>
+          </div>
+          <div class="topbar-actions">
+            <div class="save-state" id="saveState"><span></span> Sin cambios</div>
+            <button class="icon-button" id="historyButton" title="Ver historial" aria-label="Ver historial">↺</button>
+            <div class="avatar" title="Administrador">AD</div>
+          </div>
+        </header>
+
+        <div class="content">
+          <section id="projectionView" class="view active">
+            <div class="page-heading">
+              <div>
+                <div class="eyebrow">PLANEACIÓN DE COSECHA</div>
+                <h1>Proyección semanal</h1>
+                <p>Registra la flor esperada y compara el resultado real por bloque y variedad.</p>
+              </div>
+              <div class="heading-actions">
+                <button class="button secondary" id="exportButton">
+                  <span aria-hidden="true">↓</span> Exportar Excel
+                </button>
+                <button class="button primary" id="saveButton">
+                  <span aria-hidden="true">✓</span> Guardar semana
+                </button>
+              </div>
+            </div>
+
+            <section class="period-bar" aria-label="Selector de semana">
+              <button class="week-arrow" id="previousWeek" aria-label="Semana anterior">←</button>
+              <div class="week-summary">
+                <span>SEMANA ISO</span>
+                <strong id="weekNumber">—</strong>
+              </div>
+              <div class="period-copy">
+                <strong id="periodTitle">Cargando período…</strong>
+                <span id="periodSubtitle">—</span>
+              </div>
+              <button class="today-button" id="currentWeek">Ir a esta semana</button>
+              <button class="week-arrow" id="nextWeek" aria-label="Semana siguiente">→</button>
+            </section>
+
+            <section class="metrics" aria-label="Resumen semanal">
+              <article class="metric-card">
+                <span class="metric-label">PROYECCIÓN TOTAL</span>
+                <div><strong id="projectedTotal">0</strong><small> tallos</small></div>
+                <span class="metric-detail" id="projectedDetail">0 variedades activas</span>
+              </article>
+              <article class="metric-card">
+                <span class="metric-label">PRODUCCIÓN REAL</span>
+                <div><strong id="actualTotal">0</strong><small> tallos</small></div>
+                <span class="metric-detail">Acumulado de la semana</span>
+              </article>
+              <article class="metric-card performance-card">
+                <span class="metric-label">CUMPLIMIENTO</span>
+                <div><strong id="performanceTotal">—</strong><small id="performanceSuffix"></small></div>
+                <div class="progress-track"><span id="performanceBar"></span></div>
+              </article>
+            </section>
+
+            <section class="entry-card" id="entryCard">
+              <div class="entry-heading">
+                <div>
+                  <span class="section-kicker">NUEVA FILA</span>
+                  <h2>Agregar bloque y variedad</h2>
+                </div>
+                <span class="hint">Los valores se pueden completar después</span>
+              </div>
+              <form id="quickAddForm" class="quick-add">
+                <label>
+                  <span>Bloque</span>
+                  <input id="blockInput" autocomplete="off" placeholder="Ej. 12" maxlength="60" required />
+                </label>
+                <label class="variety-field">
+                  <span>Variedad</span>
+                  <input id="varietyInput" autocomplete="off" placeholder="Ej. Freedom" maxlength="120" required />
+                </label>
+                <button class="button add-button" type="submit"><span>＋</span> Agregar fila</button>
+              </form>
+            </section>
+
+            <section class="table-card">
+              <div class="table-heading">
+                <div>
+                  <span class="section-kicker">DETALLE DE CAPTURA</span>
+                  <h2 id="tableTitle">Proyección por día</h2>
+                </div>
+                <div class="table-legend">
+                  <span><i class="legend-projected"></i> Proyección</span>
+                  <span><i class="legend-actual"></i> Real</span>
+                </div>
+              </div>
+              <div class="table-scroll">
+                <table class="projection-table">
+                  <thead id="projectionHead"></thead>
+                  <tbody id="projectionBody"></tbody>
+                  <tfoot id="projectionFoot"></tfoot>
+                </table>
+                <div class="empty-state" id="emptyState">
+                  <div class="empty-icon">✿</div>
+                  <h3>Esta semana aún no tiene filas</h3>
+                  <p>Agrega el primer bloque y variedad para comenzar la proyección.</p>
+                  <button class="button primary" id="emptyAddButton" type="button">Agregar primera fila</button>
+                </div>
+              </div>
+              <div class="mobile-capture" id="mobileCapture"></div>
+            </section>
+          </section>
+
+          <section id="historyView" class="view">
+            <div class="page-heading history-heading">
+              <div>
+                <div class="eyebrow">ARCHIVO HISTÓRICO</div>
+                <h1>Semanas guardadas</h1>
+                <p>Consulta, compara o exporta las proyecciones de la finca seleccionada.</p>
+              </div>
+              <button class="button secondary" id="backToProjection">← Volver a captura</button>
+            </div>
+            <div class="history-toolbar">
+              <label class="search-field">
+                <span>⌕</span>
+                <input id="historySearch" type="search" placeholder="Buscar por semana o año" />
+              </label>
+              <span id="historyCount">0 semanas</span>
+            </div>
+            <div id="historyGrid" class="history-grid"></div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="/app.js" defer></script>
+  </body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "name": "flor-semanal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sistema de proyecciones semanales de flor para dos fincas",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "exceljs": "^4.4.0",
+    "express": "^4.21.2",
+    "pg": "^8.13.1"
+  }
+}
