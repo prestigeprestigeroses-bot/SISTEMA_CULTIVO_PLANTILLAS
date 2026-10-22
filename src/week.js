@@ -4,7 +4,7 @@ function getIsoWeekParts(date = new Date()) {
   utc.setUTCDate(utc.getUTCDate() + 4 - day);
   const yearStart = new Date(Date.UTC(utc.getUTCFullYear(), 0, 1));
   const week = Math.ceil((((utc - yearStart) / 86400000) + 1) / 7);
-  return { year: utc.getUTCFullYear(), week };
+  return { year: utc.getUTCFullYear(), week };//$%
 }
 
 function isoWeekStart(year, week) {
