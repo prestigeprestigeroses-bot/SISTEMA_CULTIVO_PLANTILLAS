@@ -9,7 +9,7 @@ Sistema web para registrar la proyección y producción real de flor de dos finc
 - Semana ISO actual automática y navegación entre semanas.
 - Plantillas fijas para Finca P1 y Finca P2, separadas en Producción 1 y Producción 2 en el orden indicado.
 - Bloques y variedades de ambas fincas protegidos contra edición y eliminación, también en el servidor.
-- Vista de captura para celular con filas tipo planilla, selector de día y botón de pantalla completa (con opción de guardar dentro de la vista).
+- Vista de captura para celular con filas tipo planilla, selector de día y botón de pantalla completa en proyección, temperatura y registro hídrico (con opción de guardar dentro de la vista). El modo ampliado se ajusta al teclado del teléfono para no cerrarse durante la captura.
 - Proyección y producción real para lunes a domingo.
 - Totales diarios, por producción y por semana en tiempo real; Total arreglos editable por variedad.
 - Historial de semanas por finca.

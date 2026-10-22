@@ -363,11 +363,19 @@ h1 { margin: 5px 0 5px; color: var(--forest-950); font-size: clamp(28px, 3vw, 38
 .inventory-table tfoot th, .inventory-table tfoot td { position: sticky; bottom: 0; z-index: 2; background: var(--leaf-pale); font-weight: 800; }
 .inventory-table tfoot .inventory-identity { z-index: 3; background: var(--leaf-pale); }
 .inventory-mobile-capture { display: none; }
-body.sheet-open { overflow: hidden; }
-.table-card.sheet-expanded, .table-card.sheet-expanded:fullscreen { position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column; width: 100%; height: 100dvh; border-radius: 0; background: var(--paper); }
+body.capture-open { overflow: hidden; }
+body.capture-open .view.active { animation: none; }
+.table-card.sheet-expanded { position: fixed; top: var(--capture-top, 0px); right: 0; left: 0; z-index: 30; display: flex; flex-direction: column; width: 100%; height: var(--capture-height, 100dvh); border-radius: 0; background: var(--paper); }
 .sheet-expanded .table-heading { flex: none; }
-.sheet-expanded .table-scroll { flex: 1; max-height: none; }
+.sheet-expanded .table-scroll { flex: 1; min-height: 0; max-height: none; }
 .sheet-expanded .sheet-save { display: inline-flex; }
+.view.field-view.field-expanded { position: fixed; top: var(--capture-top, 0px); right: 0; left: 0; z-index: 30; display: flex; flex-direction: column; width: 100%; height: var(--capture-height, 100dvh); padding: 0; overflow: hidden; background: var(--cream); }
+.field-expanded .page-heading { flex: none; align-items: center; margin: 0; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--paper); }
+.field-expanded .page-heading h1 { font-size: 19px; }
+.field-expanded .page-heading p, .field-expanded .page-heading .eyebrow { display: none; }
+.field-expanded .field-period { flex: none; margin: 8px 10px; }
+.field-expanded .field-editor { flex: 1; min-height: 0; padding: 0 10px 10px; overflow: auto; overscroll-behavior: contain; }
+.field-expanded .field-card { box-shadow: none; }
 
 @media (max-width: 1050px) {
   .app-shell { grid-template-columns: 76px minmax(0, 1fr); }
@@ -456,6 +464,12 @@ body.sheet-open { overflow: hidden; }
   .sheet-expanded .mobile-capture { display: flex; flex: 1; flex-direction: column; min-height: 0; padding: 6px; }
   .sheet-expanded .mobile-days { flex: none; }
   .sheet-expanded .mobile-sheet-scroll { flex: 1; min-height: 0; overflow: auto; }
+  .field-expanded .page-heading { display: block; padding: 8px 10px; }
+  .field-expanded .page-heading h1 { margin: 0; font-size: 16px; }
+  .field-expanded .page-heading .report-actions { display: flex; gap: 5px; margin-top: 7px; }
+  .field-expanded .page-heading .button { flex: 1 1 30%; min-width: 0; min-height: 35px; padding: 0 5px; font-size: 10px; }
+  .field-expanded .field-period { margin: 6px 8px; }
+  .field-expanded .field-editor { padding: 0 8px 8px; }
   .field-view .page-heading { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
   .field-view .page-heading .report-actions, .inventory-view .page-heading .report-actions { width: 100%; }
   .field-view .page-heading .button, .inventory-view .page-heading .button { flex: 1; min-width: 145px; }

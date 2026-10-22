@@ -591,6 +591,7 @@ async function changeWeek(delta) {
 
 function showView(name) {
   if (!window.authApp?.canView(name)) return;
+  if (name !== state.activeView) setCaptureExpanded(null, false);
   state.activeView = name;
   for (const [view, element] of Object.entries({ projection: elements.projectionView, temperature: elements.temperatureView, water: elements.waterView, inventory: document.querySelector('#inventoryView'), consultation: document.querySelector('#consultationView'), history: elements.historyView })) {
     element.classList.toggle('active', view === name);
@@ -793,28 +794,38 @@ document.querySelectorAll('.field-editor').forEach((editor) => {
 elements.saveButton.addEventListener('click', () => saveWeek());
 elements.saveSheetButton.addEventListener('click', () => saveWeek());
 
-async function setSheetExpanded(expanded) {
-  elements.sheetCard.classList.toggle('sheet-expanded', expanded);
-  document.body.classList.toggle('sheet-open', expanded);
-  elements.expandSheet.setAttribute('aria-pressed', String(expanded));
-  elements.expandSheet.textContent = expanded ? '✕ Cerrar' : '⛶ Pantalla completa';
-  renderPeriod();
-  if (expanded && elements.sheetCard.requestFullscreen) {
-    try { await elements.sheetCard.requestFullscreen(); } catch { /* La vista fija sigue funcionando. */ }
-  } else if (!expanded && document.fullscreenElement === elements.sheetCard) {
-    try { await document.exitFullscreen(); } catch { /* La vista ya está cerrada. */ }
-  }
+function syncCaptureViewport() {
+  const viewport = window.visualViewport;
+  document.documentElement.style.setProperty('--capture-height', `${Math.round(viewport?.height || window.innerHeight)}px`);
+  document.documentElement.style.setProperty('--capture-top', `${Math.round(viewport?.offsetTop || 0)}px`);
 }
 
-elements.expandSheet.addEventListener('click', () => setSheetExpanded(!elements.sheetCard.classList.contains('sheet-expanded')));
-document.addEventListener('fullscreenchange', () => {
-  if (!document.fullscreenElement && elements.sheetCard.classList.contains('sheet-expanded')) {
-    elements.sheetCard.classList.remove('sheet-expanded');
-    document.body.classList.remove('sheet-open');
-    elements.expandSheet.setAttribute('aria-pressed', 'false');
-    elements.expandSheet.textContent = '⛶ Pantalla completa';
-    renderPeriod();
+function setCaptureExpanded(target, expanded) {
+  for (const [card, className, button] of [
+    [elements.sheetCard, 'sheet-expanded', elements.expandSheet],
+    [elements.temperatureView, 'field-expanded', elements.temperatureView.querySelector('.field-expand')],
+    [elements.waterView, 'field-expanded', elements.waterView.querySelector('.field-expand')],
+  ]) {
+    const active = expanded && card === target;
+    card.classList.toggle(className, active);
+    button.setAttribute('aria-pressed', String(active));
+    button.textContent = active ? '✕ Cerrar' : '⛶ Pantalla completa';
   }
+  document.body.classList.toggle('capture-open', expanded);
+  if (expanded) syncCaptureViewport();
+  if (state.year && state.week) renderPeriod();
+}
+
+elements.expandSheet.addEventListener('click', () => setCaptureExpanded(elements.sheetCard, !elements.sheetCard.classList.contains('sheet-expanded')));
+document.querySelectorAll('.field-expand').forEach((button) => button.addEventListener('click', () => {
+  const view = button.closest('.field-view');
+  setCaptureExpanded(view, !view.classList.contains('field-expanded'));
+}));
+window.visualViewport?.addEventListener('resize', syncCaptureViewport);
+window.visualViewport?.addEventListener('scroll', syncCaptureViewport);
+window.addEventListener('resize', syncCaptureViewport);
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && document.body.classList.contains('capture-open')) setCaptureExpanded(null, false);
 });
 elements.exportButton.addEventListener('click', async () => {
   if (window.authApp?.canEdit('production') && (state.dirty || state.fromTemplate) && !(await saveWeek({ quiet: true }))) return;
