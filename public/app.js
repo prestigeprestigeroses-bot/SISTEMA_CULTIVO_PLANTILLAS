@@ -11,6 +11,10 @@ const state = {
   fromTemplate: false,
   loading: false,
   selectedDay: 0,
+  fieldData: null,
+  fieldDirty: false,
+  fieldDay: 0,
+  activeView: 'projection',
 };
 
 const elements = {
@@ -28,6 +32,9 @@ const elements = {
   projectionBody: document.querySelector('#projectionBody'),
   projectionFoot: document.querySelector('#projectionFoot'),
   mobileCapture: document.querySelector('#mobileCapture'),
+  sheetCard: document.querySelector('#sheetCard'),
+  expandSheet: document.querySelector('#expandSheet'),
+  saveSheetButton: document.querySelector('#saveSheetButton'),
   emptyState: document.querySelector('#emptyState'),
   quickAddForm: document.querySelector('#quickAddForm'),
   entryCard: document.querySelector('#entryCard'),
@@ -38,6 +45,10 @@ const elements = {
   saveState: document.querySelector('#saveState'),
   projectionView: document.querySelector('#projectionView'),
   historyView: document.querySelector('#historyView'),
+  temperatureView: document.querySelector('#temperatureView'),
+  waterView: document.querySelector('#waterView'),
+  temperatureEditor: document.querySelector('#temperatureEditor'),
+  waterEditor: document.querySelector('#waterEditor'),
   historyGrid: document.querySelector('#historyGrid'),
   historyCount: document.querySelector('#historyCount'),
   historySearch: document.querySelector('#historySearch'),
@@ -108,9 +119,19 @@ function totals() {
 
 function setDirty(value) {
   state.dirty = value;
-  const needsSave = value || state.fromTemplate;
+  renderSaveState();
+}
+
+function renderSaveState() {
+  if (window.authApp?.role === 'viewer') {
+    elements.saveState.className = 'save-state saved';
+    elements.saveState.innerHTML = '<span></span> Solo lectura';
+    return;
+  }
+  const changed = state.dirty || state.fieldDirty || window.inventoryApp?.dirty;
+  const needsSave = changed || state.fromTemplate;
   elements.saveState.className = `save-state ${needsSave ? 'dirty' : 'saved'}`;
-  elements.saveState.innerHTML = `<span></span> ${value ? 'Cambios sin guardar' : state.fromTemplate ? 'Plantilla sin guardar' : 'Todo guardado'}`;
+  elements.saveState.innerHTML = `<span></span> ${changed ? 'Cambios sin guardar' : state.fromTemplate ? 'Plantilla sin guardar' : 'Todo guardado'}`;
 }
 
 function showToast(message, type = 'success') {
@@ -133,7 +154,9 @@ function renderPeriod() {
   elements.weekNumber.textContent = state.week;
   elements.periodTitle.textContent = range.title;
   elements.periodSubtitle.textContent = range.subtitle;
-  document.querySelector('#tableTitle').textContent = `Proyección por día · Semana ${state.week}`;
+  document.querySelector('#tableTitle').textContent = elements.sheetCard.classList.contains('sheet-expanded')
+    ? `Semana ${state.week}` : `Proyección por día · Semana ${state.week}`;
+  document.querySelectorAll('[data-week-label]').forEach((label) => { label.textContent = `Semana ${state.week} · ${state.year} · ${range.title}`; });
 }
 
 function renderMetrics() {
@@ -264,22 +287,27 @@ function updateRowDisplay(rowIndex) {
 function renderMobile() {
   const fixed = isFixedFarm();
   const day = state.selectedDay;
-  const groups = [];
+  const rows = [];
   state.records.forEach((record, index) => {
     if (fixed && (index === 0 || state.records[index - 1].production !== record.production)) {
-      groups.push(`<div class="mobile-production">PRODUCCIÓN ${record.production}</div>`);
+      rows.push(`<div class="mobile-production">PRODUCCIÓN ${record.production}</div>`);
     }
     const sum = rowTotals(record);
-    groups.push(`<article class="mobile-record day-${day}" data-mobile-row="${index}">
-      <div class="mobile-record-head"><span class="mobile-block">BLQ ${escapeHtml(record.block)}</span><strong class="${['FREEDOM', 'DANCING RED'].includes(record.variety) ? 'red-variety' : ''}">${escapeHtml(record.variety)}</strong></div>
-      <div class="mobile-inputs">
-        <label class="mobile-projected"><span>Proyección · ${DAYS[day]}</span><input type="number" min="0" step="1" inputmode="numeric" data-day="${day}" data-kind="projected" aria-label="Proyección ${DAYS[day]} ${record.variety} bloque ${record.block}" value="${Number(record.days[day].projected) || ''}" placeholder="0"></label>
-        <label class="mobile-actual"><span>Real · ${DAYS[day]}</span><input type="number" min="0" step="1" inputmode="numeric" data-day="${day}" data-kind="actual" aria-label="Real ${DAYS[day]} ${record.variety} bloque ${record.block}" value="${Number(record.days[day].actual) || ''}" placeholder="0"></label>
-      </div>
-      <div class="mobile-totals"><div class="mobile-total-projected"><span>Total proyección</span><strong>${formatNumber(sum.projected)}</strong></div><div class="mobile-total-real"><span>Total real</span><strong>${formatNumber(sum.actual)}</strong></div><label class="mobile-arrangements"><span>Total arreglos</span><input type="number" min="0" step="1" inputmode="numeric" data-field="arrangements" aria-label="Total arreglos ${record.variety} bloque ${record.block}" value="${Number(record.arrangements) || ''}" placeholder="0"></label></div>
-    </article>`);
+    rows.push(`<div class="mobile-record" role="row" data-mobile-row="${index}">
+      <span class="mobile-block" role="cell">${escapeHtml(record.block)}</span>
+      <strong class="mobile-variety ${['FREEDOM', 'DANCING RED'].includes(record.variety) ? 'red-variety' : ''}" role="cell">${escapeHtml(record.variety)}</strong>
+      <label class="mobile-projected" role="cell"><span class="sr-only">Proyección ${DAYS[day]}</span><input type="number" min="0" step="1" inputmode="numeric" data-day="${day}" data-kind="projected" aria-label="Proyección ${DAYS[day]} ${record.variety} bloque ${record.block}" value="${Number(record.days[day].projected) || ''}" placeholder="0"></label>
+      <label class="mobile-actual" role="cell"><span class="sr-only">Real ${DAYS[day]}</span><input type="number" min="0" step="1" inputmode="numeric" data-day="${day}" data-kind="actual" aria-label="Real ${DAYS[day]} ${record.variety} bloque ${record.block}" value="${Number(record.days[day].actual) || ''}" placeholder="0"></label>
+      <span class="mobile-total-projected" role="cell">${formatNumber(sum.projected)}</span>
+      <span class="mobile-total-real" role="cell">${formatNumber(sum.actual)}</span>
+      <label class="mobile-arrangements" role="cell"><span class="sr-only">Total arreglos</span><input type="number" min="0" step="1" inputmode="numeric" data-field="arrangements" aria-label="Total arreglos ${record.variety} bloque ${record.block}" value="${Number(record.arrangements) || ''}" placeholder="0"></label>
+    </div>`);
+    if (fixed && (index === state.records.length - 1 || state.records[index + 1].production !== record.production)) {
+      rows.push(`<div class="mobile-summary" data-mobile-production="${record.production}"><span class="mobile-summary-label">TOTAL P${record.production}</span><span class="mobile-summary-projected">0</span><span class="mobile-summary-actual">0</span><span class="mobile-summary-arrangements">0</span></div>`);
+    }
   });
-  elements.mobileCapture.innerHTML = `<div class="mobile-days" role="group" aria-label="Día para capturar">${DAYS.map((name, index) => `<button type="button" class="day-${index} ${day === index ? 'active' : ''}" data-select-day="${index}" aria-pressed="${day === index}">${name.slice(0, 3)}</button>`).join('')}</div><p class="mobile-day-note">Captura ${DAYS[day].toLowerCase()} · los totales incluyen toda la semana</p>${groups.join('') || '<p class="mobile-day-note">Aún no hay filas en esta semana.</p>'}`;
+  elements.mobileCapture.innerHTML = `<div class="mobile-days" role="group" aria-label="Día para capturar">${DAYS.map((name, index) => `<button type="button" class="day-${index} ${day === index ? 'active' : ''}" data-select-day="${index}" aria-pressed="${day === index}">${name.slice(0, 3)}</button>`).join('')}</div><div class="mobile-sheet-scroll"><div class="mobile-sheet day-${day}" role="table" aria-label="Planilla de ${DAYS[day]}"><div class="mobile-grid-head" role="row"><span role="columnheader">BLQ</span><span role="columnheader">VARIEDAD</span><span role="columnheader">PROY.</span><span role="columnheader">REAL</span><span role="columnheader">T.PROY.</span><span role="columnheader">T.REAL</span><span role="columnheader">ARREG.</span></div>${rows.join('') || '<p class="mobile-day-note">Aún no hay filas en esta semana.</p>'}<div class="mobile-summary mobile-week-summary"><span class="mobile-summary-label">TOTAL SEMANA</span><span class="mobile-summary-projected">0</span><span class="mobile-summary-actual">0</span><span class="mobile-summary-arrangements">0</span></div></div></div>`;
+  renderMobileSummaries();
 }
 
 function updateMobileCard(rowIndex) {
@@ -287,14 +315,206 @@ function updateMobileCard(rowIndex) {
   if (!card) return;
   const record = state.records[rowIndex];
   const sum = rowTotals(record);
-  card.querySelector('.mobile-total-projected strong').textContent = formatNumber(sum.projected);
-  card.querySelector('.mobile-total-real strong').textContent = formatNumber(sum.actual);
+  card.querySelector('.mobile-total-projected').textContent = formatNumber(sum.projected);
+  card.querySelector('.mobile-total-real').textContent = formatNumber(sum.actual);
   for (const kind of ['projected', 'actual']) {
     const input = card.querySelector(`[data-kind="${kind}"]`);
     if (document.activeElement !== input) input.value = record.days[state.selectedDay][kind] || '';
   }
   const arrangements = card.querySelector('[data-field="arrangements"]');
   if (document.activeElement !== arrangements) arrangements.value = record.arrangements || '';
+  renderMobileSummaries();
+}
+
+function renderMobileSummaries() {
+  const update = (element, records) => {
+    if (!element) return;
+    element.querySelector('.mobile-summary-projected').textContent = formatNumber(records.reduce((sum, record) => sum + rowTotals(record).projected, 0));
+    element.querySelector('.mobile-summary-actual').textContent = formatNumber(records.reduce((sum, record) => sum + rowTotals(record).actual, 0));
+    element.querySelector('.mobile-summary-arrangements').textContent = formatNumber(records.reduce((sum, record) => sum + (Number(record.arrangements) || 0), 0));
+  };
+  for (const production of [1, 2]) update(elements.mobileCapture.querySelector(`[data-mobile-production="${production}"]`), state.records.filter((record) => record.production === production));
+  update(elements.mobileCapture.querySelector('.mobile-week-summary'), state.records);
+}
+
+const CLIMATE_ROWS = {
+  F1: [
+    { key: 'minTemp', label: 'TEMPERATURA MÍN.', unit: '°C' },
+    { key: 'maxTemp', label: 'TEMPERATURA MÁX.', unit: '°C' },
+    { key: 'humidity', label: 'HUMEDAD RELATIVA', unit: '%' },
+    { key: 'precipitation', label: 'PRECIPITACIÓN', unit: 'mm' },
+  ],
+  F2: [
+    { key: 'maxTemp', label: 'TEMPERATURA MÁX.', unit: '°C' },
+    { key: 'minTemp', label: 'TEMPERATURA MÍN.', unit: '°C' },
+    { key: 'precipitation', label: 'PRECIPITACIÓN', unit: 'mm' },
+    { key: 'humidity', label: 'HUMEDAD RELATIVA', unit: '%' },
+  ],
+};
+
+function farmCode() {
+  return state.farms.find((farm) => Number(farm.id) === state.farmId)?.code || 'F1';
+}
+
+function applyFarmTheme() {
+  document.body.dataset.farm = farmCode();
+}
+
+function waterRows() {
+  return farmCode() === 'F1' ? [
+    { key: 'initial', label: 'LECTURA INICIAL', unit: 'm³', section: 'water' },
+    { key: 'final', label: 'LECTURA FINAL', unit: 'm³', section: 'water' },
+    { key: 'daily', label: 'CONSUMO DIARIO', unit: 'm³', section: 'water', computed: true },
+    { key: 'liters', label: 'CONSUMO ACUMULADO', unit: 'L/cama', section: 'water', computed: true },
+  ] : [
+    { key: 'drip', label: 'GOTEO', unit: 'm³', section: 'water' },
+    { key: 'hose', label: 'CACHO', unit: 'm³', section: 'water' },
+    { key: 'daily', label: 'CONSUMO DIARIO', unit: 'm³', section: 'water', computed: true },
+    { key: 'liters', label: 'CONSUMO ACUMULADO', unit: 'L/cama', section: 'water', computed: true },
+  ];
+}
+
+function fieldNumber(value, digits = 1) {
+  return value === null || value === undefined ? '—'
+    : new Intl.NumberFormat('es-CO', { maximumFractionDigits: digits }).format(value);
+}
+
+function fieldInputValue(value) {
+  return value === null || value === undefined ? ''
+    : new Intl.NumberFormat('es-CO', { maximumFractionDigits: 3, useGrouping: true }).format(value);
+}
+
+function parseFieldNumber(text, reading = false) {
+  const raw = text.trim().replace(/\s/g, '');
+  if (!raw) return null;
+  const normalized = reading && /^\d{1,3}(\.\d{3})+$/.test(raw)
+    ? raw.replaceAll('.', '') : raw.replace(',', '.');
+  if (!/^-?\d+(\.\d+)?$/.test(normalized)) return NaN;
+  return Number(normalized);
+}
+
+function fieldCalculations() {
+  const data = state.fieldData;
+  if (!data) return null;
+  const daily = Array.from({ length: 7 }, (_, day) => {
+    if (farmCode() === 'F1') {
+      const initial = data.water.initial[day];
+      const final = data.water.final[day];
+      return initial === null || final === null || final < initial ? null : final - initial;
+    }
+    const drip = data.water.drip[day];
+    const hose = data.water.hose[day];
+    return drip === null && hose === null ? null : (drip || 0) + (hose || 0);
+  });
+  const liters = daily.map((amount) => amount === null || !data.beds ? null : amount * 1000 / data.beds);
+  const averages = Object.fromEntries(Object.entries(data.climate).map(([key, values]) => {
+    const entered = values.filter((value) => value !== null);
+    return [key, entered.length ? entered.reduce((sum, value) => sum + value, 0) / entered.length : null];
+  }));
+  const totalDaily = daily.reduce((sum, value) => sum + (value || 0), 0);
+  return { daily, liters, averages, totalDaily, totalLiters: data.beds ? totalDaily * 1000 / data.beds : null };
+}
+
+function fieldValue(row, day, calculations) {
+  if (row.key === 'daily') return calculations.daily[day];
+  if (row.key === 'liters') return calculations.liters[day];
+  return state.fieldData[row.section][row.key][day];
+}
+
+function fieldTotal(row, calculations) {
+  if (row.section === 'climate') return calculations.averages[row.key];
+  if (row.key === 'daily') return calculations.totalDaily;
+  if (row.key === 'liters') return calculations.totalLiters;
+  if (row.key === 'drip' || row.key === 'hose') return state.fieldData.water[row.key].reduce((sum, value) => sum + (value || 0), 0);
+  return null;
+}
+
+function isTemperatureRow(row) {
+  return row.section === 'climate' && (row.key === 'minTemp' || row.key === 'maxTemp');
+}
+
+function fieldTotalText(row, calculations) {
+  const value = fieldTotal(row, calculations);
+  const suffix = value === null ? '' : isTemperatureRow(row) ? ' °C' : row.section === 'climate' && row.key === 'humidity' ? '%' : '';
+  return `${fieldNumber(value, 2)}${suffix}`;
+}
+
+function fieldCell(row, day, calculations) {
+  const value = fieldValue(row, day, calculations);
+  if (row.computed) return `<span class="field-computed" data-result="${row.key}" data-day="${day}">${fieldNumber(value, row.key === 'liters' ? 2 : 3)}</span>`;
+  const input = `<input class="field-input" type="text" inputmode="decimal" autocomplete="off" data-section="${row.section}" data-field="${row.key}" data-day="${day}" aria-label="${row.label} ${DAYS[day]}${isTemperatureRow(row) ? ' en grados centígrados' : ''}" value="${escapeHtml(fieldInputValue(value))}" placeholder="—">`;
+  return isTemperatureRow(row) ? `<span class="field-temperature-input">${input}<span aria-hidden="true">°C</span></span>` : input;
+}
+
+function renderFieldEditor(kind) {
+  if (!state.fieldData) return;
+  const isClimate = kind === 'climate';
+  const rows = isClimate ? CLIMATE_ROWS[farmCode()].map((row) => ({ ...row, section: 'climate' })) : waterRows();
+  const calculations = fieldCalculations();
+  const title = isClimate ? `TEMPERATURA Y PRECIPITACIÓN · ${farmCode().replace('F', 'P')}` : `LECTURA VÁLVULA VOLUMÉTRICA · ${farmCode().replace('F', 'P')}`;
+  const editor = isClimate ? elements.temperatureEditor : elements.waterEditor;
+  const beds = isClimate ? '' : `<div class="beds-line"><label for="bedsInput">NÚMERO DE CAMAS</label><input id="bedsInput" class="field-input" type="text" inputmode="numeric" data-beds="true" value="${escapeHtml(fieldInputValue(state.fieldData.beds))}" placeholder="Ingresar camas"><span>El consumo por cama se calcula con este valor.</span></div>`;
+  const desktopRows = rows.map((row) => `<tr class="${row.computed ? 'calculated-row' : ''}"><th scope="row">${row.label} <small>${row.unit}</small></th>${DAYS.map((_, day) => `<td>${fieldCell(row, day, calculations)}</td>`).join('')}<td class="field-total" data-total="${row.key}">${fieldTotalText(row, calculations)}</td></tr>`).join('');
+  const day = state.fieldDay;
+  const mobileRows = rows.map((row) => `<div class="field-mobile-row ${row.computed ? 'calculated-row' : ''}"><div><strong>${row.label}</strong><small>${row.unit}</small></div><div>${fieldCell(row, day, calculations)}</div><div class="field-total" data-total="${row.key}">${fieldTotalText(row, calculations)}</div></div>`).join('');
+  editor.innerHTML = `<section class="field-card"><div class="field-card-title">${title}</div>${beds}<div class="field-table-scroll"><table class="field-table"><thead><tr><th scope="col">REGISTRO</th>${DAYS.map((name) => `<th scope="col">${name.toUpperCase()}</th>`).join('')}<th scope="col">${isClimate ? 'PROMEDIO' : 'ACUMULADO'}</th></tr></thead><tbody>${desktopRows}</tbody></table></div><div class="field-mobile"><div class="field-day-tabs" role="group" aria-label="Día del registro">${DAYS.map((name, index) => `<button type="button" data-field-day="${index}" class="day-${index} ${day === index ? 'active' : ''}" aria-pressed="${day === index}">${name.slice(0, 3)}</button>`).join('')}</div><div class="field-mobile-head"><span>REGISTRO</span><span>${DAYS[day].toUpperCase()}</span><span>${isClimate ? 'PROM.' : 'ACUM.'}</span></div>${mobileRows}</div></section>`;
+}
+
+function renderFieldEditors() {
+  renderFieldEditor('climate');
+  renderFieldEditor('water');
+}
+
+function updateFieldCalculations() {
+  const calculations = fieldCalculations();
+  if (!calculations) return;
+  for (const editor of [elements.temperatureEditor, elements.waterEditor]) {
+    editor.querySelectorAll('[data-result]').forEach((node) => {
+      const value = node.dataset.result === 'daily' ? calculations.daily[Number(node.dataset.day)] : calculations.liters[Number(node.dataset.day)];
+      node.textContent = fieldNumber(value, node.dataset.result === 'liters' ? 2 : 3);
+    });
+    editor.querySelectorAll('[data-total]').forEach((node) => {
+      const rows = [...CLIMATE_ROWS.F1, ...waterRows()].map((row) => ({ ...row, section: row.section || 'climate' }));
+      const row = rows.find((item) => item.key === node.dataset.total);
+      node.textContent = fieldTotalText(row, calculations);
+    });
+  }
+}
+
+async function loadFieldData() {
+  if (!state.farmId) return;
+  try {
+    const result = await api(`/api/field-data/${state.farmId}/${state.year}/${state.week}`);
+    state.fieldData = result.data;
+    state.fieldDirty = false;
+    renderFieldEditors();
+    renderSaveState();
+  } catch (error) {
+    state.fieldData = null;
+    elements.temperatureEditor.innerHTML = `<p class="field-error">${escapeHtml(error.message)}</p>`;
+    elements.waterEditor.innerHTML = `<p class="field-error">${escapeHtml(error.message)}</p>`;
+    showToast(error.message, 'error');
+  }
+}
+
+async function saveFieldData() {
+  if (!window.authApp?.canEdit('production')) return false;
+  if (!state.fieldData) return false;
+  const invalid = document.querySelector('.field-editor .field-input:invalid');
+  if (invalid) { invalid.reportValidity(); return false; }
+  document.querySelectorAll('.field-save').forEach((button) => { button.disabled = true; button.textContent = 'Guardando…'; });
+  try {
+    const result = await api(`/api/field-data/${state.farmId}/${state.year}/${state.week}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(state.fieldData),
+    });
+    state.fieldData = result.data;
+    state.fieldDirty = false;
+    renderSaveState();
+    renderFieldEditors();
+    showToast(`Registro de ${farmCode().replace('F', 'P')} · semana ${state.week} guardado.`);
+    return true;
+  } catch (error) { showToast(error.message, 'error'); return false; }
+  finally { document.querySelectorAll('.field-save').forEach((button) => { button.disabled = false; button.textContent = '✓ Guardar registro'; }); }
 }
 
 async function loadWeek() {
@@ -326,6 +546,7 @@ async function loadWeek() {
 }
 
 async function saveWeek({ quiet = false } = {}) {
+  if (!window.authApp?.canEdit('production')) return false;
   const invalid = state.records.find((record) => !record.block.trim() || !record.variety.trim());
   if (invalid) {
     showToast('Completa bloque y variedad antes de guardar.', 'error');
@@ -333,6 +554,8 @@ async function saveWeek({ quiet = false } = {}) {
   }
   elements.saveButton.disabled = true;
   elements.saveButton.textContent = 'Guardando…';
+  elements.saveSheetButton.disabled = true;
+  elements.saveSheetButton.textContent = 'Guardando…';
   try {
     const data = await api(`/api/projections/${state.farmId}/${state.year}/${state.week}`, {
       method: 'PUT',
@@ -351,25 +574,30 @@ async function saveWeek({ quiet = false } = {}) {
   } finally {
     elements.saveButton.disabled = false;
     elements.saveButton.innerHTML = '<span aria-hidden="true">✓</span> Guardar semana';
+    elements.saveSheetButton.disabled = false;
+    elements.saveSheetButton.textContent = '✓ Guardar';
   }
 }
 
 async function changeWeek(delta) {
-  if (state.dirty && !window.confirm('Hay cambios sin guardar. ¿Deseas cambiar de semana y descartarlos?')) return;
+  if ((state.dirty || state.fieldDirty) && !window.confirm('Hay cambios sin guardar. ¿Deseas cambiar de semana y descartarlos?')) return;
   const monday = weekMonday(state.year, state.week);
   monday.setUTCDate(monday.getUTCDate() + (delta * 7));
   const parts = isoWeekParts(new Date(monday.getUTCFullYear(), monday.getUTCMonth(), monday.getUTCDate()));
   state.year = parts.year;
   state.week = parts.week;
-  await loadWeek();
+  await Promise.all([loadWeek(), loadFieldData()]);
 }
 
 function showView(name) {
-  const history = name === 'history';
-  elements.projectionView.classList.toggle('active', !history);
-  elements.historyView.classList.toggle('active', history);
-  document.querySelectorAll('.nav-item').forEach((button) => button.classList.toggle('active', button.dataset.view === name));
-  if (history) loadHistory();
+  if (!window.authApp?.canView(name)) return;
+  state.activeView = name;
+  for (const [view, element] of Object.entries({ projection: elements.projectionView, temperature: elements.temperatureView, water: elements.waterView, inventory: document.querySelector('#inventoryView'), consultation: document.querySelector('#consultationView'), history: elements.historyView })) {
+    element.classList.toggle('active', view === name);
+  }
+  document.querySelectorAll('[data-view]').forEach((button) => button.classList.toggle('active', button.dataset.view === name));
+  if (name === 'history') loadHistory();
+  if (name === 'inventory') window.inventoryApp?.show();
 }
 
 async function loadHistory() {
@@ -473,6 +701,7 @@ elements.mobileCapture.addEventListener('input', (event) => {
     if (desktop) desktop.value = value || '';
     renderGroupTotals();
     renderFoot();
+    renderMobileSummaries();
   } else {
     state.records[rowIndex].days[Number(input.dataset.day)][input.dataset.kind] = value;
     const desktop = elements.projectionBody.querySelector(`tr[data-row="${rowIndex}"] [data-day="${input.dataset.day}"][data-kind="${input.dataset.kind}"]`);
@@ -498,51 +727,119 @@ elements.historyGrid.addEventListener('click', async (event) => {
   const button = event.target.closest('[data-open-week]');
   if (!button) return;
   const [year, week] = button.dataset.openWeek.split(':').map(Number);
+  if ((state.dirty || state.fieldDirty) && !window.confirm('Hay cambios sin guardar. ¿Deseas abrir otra semana y descartarlos?')) return;
   state.year = year;
   state.week = week;
   showView('projection');
-  await loadWeek();
+  await Promise.all([loadWeek(), loadFieldData()]);
 });
 
 elements.farmSelect.addEventListener('change', async () => {
   const previous = state.farmId;
-  if (state.dirty && !window.confirm('Hay cambios sin guardar. ¿Deseas cambiar de finca y descartarlos?')) {
+  if ((state.dirty || state.fieldDirty || window.inventoryApp?.dirty) && !window.confirm('Hay cambios sin guardar. ¿Deseas cambiar de finca y descartarlos?')) {
     elements.farmSelect.value = previous;
     return;
   }
   state.farmId = Number(elements.farmSelect.value);
-  await loadWeek();
+  applyFarmTheme();
+  document.querySelector('#consultFarmName').textContent = elements.farmSelect.selectedOptions[0]?.textContent || '';
+  if (window.authApp?.role !== 'postharvest') await Promise.all([loadWeek(), loadFieldData()]);
+  if (state.activeView === 'inventory') await window.inventoryApp?.farmChanged();
   if (elements.historyView.classList.contains('active')) await loadHistory();
 });
 
 document.querySelector('#previousWeek').addEventListener('click', () => changeWeek(-1));
 document.querySelector('#nextWeek').addEventListener('click', () => changeWeek(1));
+document.querySelectorAll('[data-week-step]').forEach((button) => button.addEventListener('click', () => changeWeek(Number(button.dataset.weekStep))));
 document.querySelector('#currentWeek').addEventListener('click', async () => {
-  if (state.dirty && !window.confirm('Hay cambios sin guardar. ¿Deseas ir a esta semana y descartarlos?')) return;
+  if ((state.dirty || state.fieldDirty) && !window.confirm('Hay cambios sin guardar. ¿Deseas ir a esta semana y descartarlos?')) return;
   const current = isoWeekParts();
   state.year = current.year;
   state.week = current.week;
-  await loadWeek();
+  await Promise.all([loadWeek(), loadFieldData()]);
+});
+document.querySelectorAll('.field-save').forEach((button) => button.addEventListener('click', saveFieldData));
+document.querySelectorAll('.field-editor').forEach((editor) => {
+  editor.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-field-day]');
+    if (!button) return;
+    state.fieldDay = Number(button.dataset.fieldDay);
+    renderFieldEditors();
+  });
+  editor.addEventListener('input', (event) => {
+    const input = event.target.closest('.field-input');
+    if (!input || !state.fieldData) return;
+    const isBeds = input.dataset.beds === 'true';
+    const value = parseFieldNumber(input.value, ['initial', 'final'].includes(input.dataset.field));
+    const valid = !Number.isNaN(value) && (value === null || (isBeds
+      ? Number.isInteger(value) && value > 0 : input.dataset.section === 'climate'
+        ? (['minTemp', 'maxTemp'].includes(input.dataset.field) ? value >= -100 && value <= 100
+          : input.dataset.field === 'humidity' ? value >= 0 && value <= 100 : value >= 0)
+        : value >= 0));
+    input.setCustomValidity(valid ? '' : 'Ingresa un número válido');
+    if (!valid) return;
+    if (isBeds) state.fieldData.beds = value;
+    else state.fieldData[input.dataset.section][input.dataset.field][Number(input.dataset.day)] = value;
+    editor.querySelectorAll('.field-input').forEach((other) => {
+      if (other !== input && other.dataset.beds === input.dataset.beds
+        && other.dataset.section === input.dataset.section && other.dataset.field === input.dataset.field
+        && other.dataset.day === input.dataset.day) other.value = input.value;
+    });
+    state.fieldDirty = true;
+    renderSaveState();
+    updateFieldCalculations();
+  });
 });
 elements.saveButton.addEventListener('click', () => saveWeek());
+elements.saveSheetButton.addEventListener('click', () => saveWeek());
+
+async function setSheetExpanded(expanded) {
+  elements.sheetCard.classList.toggle('sheet-expanded', expanded);
+  document.body.classList.toggle('sheet-open', expanded);
+  elements.expandSheet.setAttribute('aria-pressed', String(expanded));
+  elements.expandSheet.textContent = expanded ? '✕ Cerrar' : '⛶ Pantalla completa';
+  renderPeriod();
+  if (expanded && elements.sheetCard.requestFullscreen) {
+    try { await elements.sheetCard.requestFullscreen(); } catch { /* La vista fija sigue funcionando. */ }
+  } else if (!expanded && document.fullscreenElement === elements.sheetCard) {
+    try { await document.exitFullscreen(); } catch { /* La vista ya está cerrada. */ }
+  }
+}
+
+elements.expandSheet.addEventListener('click', () => setSheetExpanded(!elements.sheetCard.classList.contains('sheet-expanded')));
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && elements.sheetCard.classList.contains('sheet-expanded')) {
+    elements.sheetCard.classList.remove('sheet-expanded');
+    document.body.classList.remove('sheet-open');
+    elements.expandSheet.setAttribute('aria-pressed', 'false');
+    elements.expandSheet.textContent = '⛶ Pantalla completa';
+    renderPeriod();
+  }
+});
 elements.exportButton.addEventListener('click', async () => {
-  if ((state.dirty || state.fromTemplate) && !(await saveWeek({ quiet: true }))) return;
+  if (window.authApp?.canEdit('production') && (state.dirty || state.fromTemplate) && !(await saveWeek({ quiet: true }))) return;
   window.location.href = `/api/export/${state.farmId}/${state.year}/${state.week}.xlsx`;
   showToast('Preparando archivo Excel…');
 });
+document.querySelectorAll('[data-field-export]').forEach((button) => button.addEventListener('click', async () => {
+  if (window.authApp?.canEdit('production') && state.fieldDirty && !(await saveFieldData())) return;
+  window.location.href = `/api/reports/field/${state.farmId}/${state.year}/${state.week}/${button.dataset.fieldExport}.xlsx`;
+  showToast('Preparando archivo Excel…');
+}));
 document.querySelector('#emptyAddButton').addEventListener('click', () => elements.blockInput.focus());
 document.querySelector('#historyButton').addEventListener('click', () => showView('history'));
-document.querySelector('.mobile-brand').addEventListener('click', () => showView('projection'));
+document.querySelector('.mobile-brand').addEventListener('click', () => showView(window.authApp?.initialView() || 'projection'));
 document.querySelector('#backToProjection').addEventListener('click', () => showView('projection'));
-document.querySelectorAll('.nav-item').forEach((button) => button.addEventListener('click', () => showView(button.dataset.view)));
+document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => showView(button.dataset.view)));
 elements.historySearch.addEventListener('input', renderHistory);
 
 window.addEventListener('beforeunload', (event) => {
-  if (!state.dirty) return;
+  if (!state.dirty && !state.fieldDirty && !window.inventoryApp?.dirty) return;
   event.preventDefault();
 });
 
 async function initialize() {
+  if (!(await window.authApp.session())) return;
   renderHead();
   const current = isoWeekParts();
   state.year = current.year;
@@ -553,10 +850,13 @@ async function initialize() {
     state.farmId = Number(farms.find((farm) => farm.code === 'F1')?.id || farms[0]?.id);
     elements.farmSelect.innerHTML = farms.map((farm) => `<option value="${farm.id}">${escapeHtml(farm.name)}</option>`).join('');
     elements.farmSelect.value = String(state.farmId);
+    applyFarmTheme();
+    document.querySelector('#consultFarmName').textContent = elements.farmSelect.selectedOptions[0]?.textContent || '';
     document.querySelector('#dbStatus').textContent = health.persistent ? 'Base conectada' : 'Modo demostración';
     document.querySelector('#dbStatusDetail').textContent = health.persistent ? 'PostgreSQL activo' : 'Conecta PostgreSQL';
     document.querySelector('.status-dot').classList.toggle('online', health.persistent);
-    await loadWeek();
+    if (window.authApp.role !== 'postharvest') await Promise.all([loadWeek(), loadFieldData()]);
+    showView(window.authApp.initialView());
   } catch (error) {
     showToast(`No se pudo iniciar: ${error.message}`, 'error');
     elements.projectionBody.innerHTML = `<tr><td colspan="20" style="padding:35px;text-align:center">${escapeHtml(error.message)}</td></tr>`;

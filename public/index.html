@@ -11,7 +11,25 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body>
+  <body class="auth-pending">
+    <section id="loginScreen" class="login-screen" aria-labelledby="loginTitle">
+      <form id="loginForm" class="login-card">
+        <div class="login-mark" aria-hidden="true">✿</div>
+        <div class="eyebrow">FLOR SEMANAL</div>
+        <h1 id="loginTitle">Ingresar al sistema</h1>
+        <p>Selecciona el tipo de acceso y escribe su contraseña.</p>
+        <label for="loginRole">Tipo de acceso</label>
+        <select id="loginRole" required>
+          <option value="production">Producción · Proyección, temperatura y agua</option>
+          <option value="postharvest">Poscosecha · Inventarios</option>
+          <option value="viewer">Consulta · Solo lectura</option>
+        </select>
+        <label for="loginPassword">Contraseña</label>
+        <input id="loginPassword" type="password" autocomplete="current-password" required />
+        <p id="loginError" class="login-error" role="alert"></p>
+        <button class="button primary" type="submit">Ingresar</button>
+      </form>
+    </section>
     <div class="app-shell">
       <aside class="sidebar">
         <div class="brand">
@@ -33,6 +51,22 @@
           <button class="nav-item active" data-view="projection">
             <span class="nav-icon">▦</span>
             Proyección semanal
+          </button>
+          <button class="nav-item" data-view="temperature">
+            <span class="nav-icon" aria-hidden="true">🌡</span>
+            Temperatura
+          </button>
+          <button class="nav-item" data-view="water">
+            <span class="nav-icon" aria-hidden="true">💧</span>
+            Registro hídrico
+          </button>
+          <button class="nav-item" data-view="inventory">
+            <span class="nav-icon" aria-hidden="true">✿</span>
+            Poscosecha
+          </button>
+          <button class="nav-item" data-view="consultation">
+            <span class="nav-icon" aria-hidden="true">◉</span>
+            Consulta
           </button>
           <button class="nav-item" data-view="history">
             <span class="nav-icon">↺</span>
@@ -63,7 +97,8 @@
           <div class="topbar-actions">
             <div class="save-state" id="saveState"><span></span> Sin cambios</div>
             <button class="icon-button" id="historyButton" title="Ver historial" aria-label="Ver historial">↺</button>
-            <div class="avatar" title="Administrador">AD</div>
+            <div class="avatar" id="roleBadge" title="Tipo de acceso">—</div>
+            <button class="logout-button" id="logoutButton" type="button">Salir</button>
           </div>
         </header>
 
@@ -138,15 +173,19 @@
               </form>
             </section>
 
-            <section class="table-card">
+            <section class="table-card" id="sheetCard">
               <div class="table-heading">
                 <div>
                   <span class="section-kicker">DETALLE DE CAPTURA</span>
                   <h2 id="tableTitle">Proyección por día</h2>
                 </div>
-                <div class="table-legend">
-                  <span><i class="legend-projected"></i> Proyección</span>
-                  <span><i class="legend-actual"></i> Real</span>
+                <div class="sheet-heading-actions">
+                  <div class="table-legend">
+                    <span><i class="legend-projected"></i> Proyección</span>
+                    <span><i class="legend-actual"></i> Real</span>
+                  </div>
+                  <button type="button" class="button secondary sheet-expand" id="expandSheet" aria-pressed="false">⛶ Pantalla completa</button>
+                  <button type="button" class="button primary sheet-save" id="saveSheetButton">✓ Guardar</button>
                 </div>
               </div>
               <div class="table-scroll">
@@ -164,6 +203,53 @@
               </div>
               <div class="mobile-capture" id="mobileCapture"></div>
             </section>
+          </section>
+
+          <section id="temperatureView" class="view field-view">
+            <div class="page-heading">
+              <div><div class="eyebrow">CONTROL AMBIENTAL</div><h1>Temperatura y precipitación</h1><p>Registra los datos diarios; el total muestra el promedio de los días diligenciados.</p></div>
+              <div class="report-actions"><button class="button secondary field-export" data-field-export="climate" type="button">↓ Exportar Excel</button><button class="button primary field-save" type="button">✓ Guardar registro</button></div>
+            </div>
+            <div class="field-period"><button type="button" data-week-step="-1" aria-label="Semana anterior">←</button><strong data-week-label>Semana</strong><button type="button" data-week-step="1" aria-label="Semana siguiente">→</button></div>
+            <div id="temperatureEditor" class="field-editor"></div>
+          </section>
+
+          <section id="waterView" class="view field-view">
+            <div class="page-heading">
+              <div><div class="eyebrow">CONTROL DE RIEGO</div><h1>Registro hídrico</h1><p>Lectura de válvula volumétrica y consumo por cama, calculados automáticamente.</p></div>
+              <div class="report-actions"><button class="button secondary field-export" data-field-export="water" type="button">↓ Exportar Excel</button><button class="button primary field-save" type="button">✓ Guardar registro</button></div>
+            </div>
+            <div class="field-period"><button type="button" data-week-step="-1" aria-label="Semana anterior">←</button><strong data-week-label>Semana</strong><button type="button" data-week-step="1" aria-label="Semana siguiente">→</button></div>
+            <div id="waterEditor" class="field-editor"></div>
+          </section>
+
+          <section id="inventoryView" class="view inventory-view">
+            <div class="page-heading">
+              <div><div class="eyebrow">POSCOSECHA</div><h1>Inventario de flor</h1><p>Flor procesada, a granel y de guarde según la plantilla de cada finca.</p></div>
+              <div class="report-actions"><button class="button secondary" id="inventoryExport" type="button">↓ Excel inventario</button><button class="button primary" id="inventorySave" type="button">✓ Guardar inventario</button></div>
+            </div>
+            <div class="inventory-toolbar">
+              <div id="inventoryTemplates" class="inventory-tabs" role="group" aria-label="Tipo de inventario"></div>
+              <label class="inventory-date-label">Fecha del inventario <input id="inventoryDate" type="date" /></label>
+            </div>
+            <div id="inventorySections" class="inventory-tabs inventory-section-tabs" role="group" aria-label="Sección del inventario"></div>
+            <div class="inventory-farm-summary"><div><span>TOTAL TALLOS DE TODOS LOS INVENTARIOS DE ESTA FINCA · MES SELECCIONADO</span><strong id="inventoryFarmTotal">0</strong><small id="inventoryFarmBreakdown"></small></div><button class="button secondary" id="inventoryFarmExport" type="button">↓ Excel total finca</button></div>
+            <div id="inventoryMetrics" class="inventory-metrics"></div>
+            <div id="inventoryEditor"></div>
+          </section>
+
+          <section id="consultationView" class="view consultation-view">
+            <div class="page-heading">
+              <div><div class="eyebrow">SOLO LECTURA</div><h1>Consulta de registros</h1><p>Selecciona una finca arriba y abre la información que deseas revisar. Este acceso no permite modificar datos.</p></div>
+            </div>
+            <div class="consultation-farm">Mostrando registros de <strong id="consultFarmName">Finca P1</strong></div>
+            <div class="consultation-grid">
+              <button type="button" data-view="projection"><strong>Proyección semanal</strong><span>Proyección y producción real por semana.</span></button>
+              <button type="button" data-view="temperature"><strong>Temperatura</strong><span>Temperaturas, humedad y precipitación.</span></button>
+              <button type="button" data-view="water"><strong>Registro hídrico</strong><span>Lecturas y consumos de agua.</span></button>
+              <button type="button" data-view="inventory"><strong>Poscosecha</strong><span>Inventarios de flor por finca y fecha.</span></button>
+              <button type="button" data-view="history"><strong>Historial</strong><span>Consulta las semanas guardadas.</span></button>
+            </div>
           </section>
 
           <section id="historyView" class="view">
@@ -185,10 +271,20 @@
             <div id="historyGrid" class="history-grid"></div>
           </section>
         </div>
+        <nav class="mobile-nav" aria-label="Secciones">
+          <button class="active" type="button" data-view="projection"><span aria-hidden="true">▦</span>Flor</button>
+          <button type="button" data-view="temperature"><span aria-hidden="true">🌡</span>Clima</button>
+          <button type="button" data-view="water"><span aria-hidden="true">💧</span>Agua</button>
+          <button type="button" data-view="inventory"><span aria-hidden="true">✿</span>Poscosecha</button>
+          <button type="button" data-view="consultation"><span aria-hidden="true">◉</span>Consulta</button>
+          <button type="button" data-view="history"><span aria-hidden="true">↺</span>Historial</button>
+        </nav>
       </main>
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="/auth.js" defer></script>
     <script src="/app.js" defer></script>
+    <script src="/inventory.js" defer></script>
   </body>
 </html>

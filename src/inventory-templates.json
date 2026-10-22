@@ -1,0 +1,1622 @@
+{
+  "p1": {
+    "farmCode": "F1",
+    "label": "Inventario P1",
+    "processed": {
+      "varieties": [
+        "FREEDOM",
+        "BLESSING",
+        "CORAL REEF",
+        "HILUX",
+        "HUMMER",
+        "MOMENTUM",
+        "MONDIAL",
+        "MODY BLU",
+        "PINK FLOYD",
+        "PINK MONDIAL",
+        "QUEEN BERRY",
+        "QUICK SAND",
+        "TIFFANY",
+        "VENDELA",
+        "YELLOW BIKINI",
+        "P.OHARA",
+        "SHIMMER",
+        "D.PURPLE",
+        "SOMMER",
+        "SWAM"
+      ],
+      "columns": [
+        {
+          "key": "B",
+          "process": "LÁMINA PVC",
+          "grade": 40,
+          "stems": 6
+        },
+        {
+          "key": "C",
+          "process": "LÁMINA PVC",
+          "grade": 40,
+          "stems": 12
+        },
+        {
+          "key": "D",
+          "process": "LÁMINA PVC",
+          "grade": 50,
+          "stems": 12
+        },
+        {
+          "key": "E",
+          "process": "LÁMINA VERDE",
+          "grade": 40,
+          "stems": 25
+        },
+        {
+          "key": "F",
+          "process": "LÁMINA VERDE",
+          "grade": 50,
+          "stems": 25
+        },
+        {
+          "key": "G",
+          "process": "LÁMINA VERDE",
+          "grade": 60,
+          "stems": 25
+        },
+        {
+          "key": "H",
+          "process": "LÁMINA VERDE",
+          "grade": 70,
+          "stems": 25
+        },
+        {
+          "key": "I",
+          "process": "LÁMINA VERDE",
+          "grade": 80,
+          "stems": 25
+        },
+        {
+          "key": "J",
+          "process": "LÁMINA VERDE",
+          "grade": 90,
+          "stems": 25
+        },
+        {
+          "key": "K",
+          "process": "LÁMINA VERDE",
+          "grade": 100,
+          "stems": 25
+        },
+        {
+          "key": "L",
+          "process": "LÁMINA NEGRA",
+          "grade": 50,
+          "stems": 10
+        },
+        {
+          "key": "M",
+          "process": "LÁMINA NEGRA",
+          "grade": 60,
+          "stems": 10
+        },
+        {
+          "key": "N",
+          "process": "LÁMINA NEGRA",
+          "grade": 40,
+          "stems": 24
+        },
+        {
+          "key": "O",
+          "process": "LÁMINA NEGRA",
+          "grade": 50,
+          "stems": 24
+        },
+        {
+          "key": "P",
+          "process": "LÁMINA NEGRA",
+          "grade": 60,
+          "stems": 24
+        },
+        {
+          "key": "Q",
+          "process": "LÁMINA NEGRA",
+          "grade": 40,
+          "stems": 20
+        },
+        {
+          "key": "R",
+          "process": "LÁMINA NEGRA",
+          "grade": 50,
+          "stems": 20
+        },
+        {
+          "key": "S",
+          "process": "LÁMINA NEGRA",
+          "grade": 60,
+          "stems": 20
+        },
+        {
+          "key": "T",
+          "process": "LÁMINA NEGRA",
+          "grade": 70,
+          "stems": 20
+        },
+        {
+          "key": "U",
+          "process": "LÁMINA NEGRA",
+          "grade": 40,
+          "stems": 25
+        },
+        {
+          "key": "V",
+          "process": "LÁMINA NEGRA",
+          "grade": 50,
+          "stems": 25
+        },
+        {
+          "key": "W",
+          "process": "LÁMINA NEGRA",
+          "grade": 60,
+          "stems": 25
+        },
+        {
+          "key": "X",
+          "process": "LÁMINA NEGRA",
+          "grade": 70,
+          "stems": 25
+        },
+        {
+          "key": "Y",
+          "process": "LÁMINA NEGRA",
+          "grade": 80,
+          "stems": 25
+        },
+        {
+          "key": "Z",
+          "process": "LÁMINA NEGRA",
+          "grade": 90,
+          "stems": 25
+        },
+        {
+          "key": "AA",
+          "process": "LÁMINA NEGRA",
+          "grade": 100,
+          "stems": 25
+        },
+        {
+          "key": "AB",
+          "process": "LÁMINA BLANCA",
+          "grade": 40,
+          "stems": 10
+        },
+        {
+          "key": "AC",
+          "process": "LÁMINA BLANCA",
+          "grade": 50,
+          "stems": 10
+        },
+        {
+          "key": "AD",
+          "process": "LÁMINA BLANCA",
+          "grade": 40,
+          "stems": 25
+        },
+        {
+          "key": "AE",
+          "process": "LÁMINA BLANCA",
+          "grade": 50,
+          "stems": 25
+        },
+        {
+          "key": "AF",
+          "process": "LÁMINA BLANCA",
+          "grade": 60,
+          "stems": 25
+        },
+        {
+          "key": "AG",
+          "process": "LÁMINA BLANCA",
+          "grade": 70,
+          "stems": 25
+        },
+        {
+          "key": "AH",
+          "process": "LÁMINA BLANCA",
+          "grade": 80,
+          "stems": 25
+        },
+        {
+          "key": "AI",
+          "process": "LÁMINA BLANCA",
+          "grade": 90,
+          "stems": 25
+        },
+        {
+          "key": "AJ",
+          "process": "LÁMINA BLANCA",
+          "grade": 100,
+          "stems": 25
+        },
+        {
+          "key": "AK",
+          "process": "LÁMINA AZUL",
+          "grade": 40,
+          "stems": 25
+        },
+        {
+          "key": "AL",
+          "process": "LÁMINA AZUL",
+          "grade": 50,
+          "stems": 25
+        },
+        {
+          "key": "AM",
+          "process": "LÁMINA AZUL",
+          "grade": 60,
+          "stems": 25
+        },
+        {
+          "key": "AN",
+          "process": "LÁMINA AZUL",
+          "grade": 70,
+          "stems": 25
+        },
+        {
+          "key": "AO",
+          "process": "LÁMINA AMARILLA",
+          "grade": 40,
+          "stems": 20
+        },
+        {
+          "key": "AP",
+          "process": "LÁMINA AMARILLA",
+          "grade": 50,
+          "stems": 20
+        },
+        {
+          "key": "AQ",
+          "process": "LÁMINA AMARILLA",
+          "grade": 60,
+          "stems": 20
+        },
+        {
+          "key": "AR",
+          "process": "LÁMINA AMARILLA",
+          "grade": 70,
+          "stems": 20
+        },
+        {
+          "key": "AS",
+          "process": "FLOR PARA TERCEROS",
+          "grade": 20,
+          "stems": 20
+        },
+        {
+          "key": "AT",
+          "process": "FLOR PARA TERCEROS",
+          "grade": 25,
+          "stems": 25
+        },
+        {
+          "key": "AU",
+          "process": "FLOR PARA TERCEROS",
+          "grade": 30,
+          "stems": 30
+        },
+        {
+          "key": "AV",
+          "process": "FLOR PARA TERCEROS",
+          "grade": 10,
+          "stems": 10
+        },
+        {
+          "key": "AW",
+          "process": "NACIONAL",
+          "grade": "NACIONAL",
+          "stems": null
+        }
+      ]
+    },
+    "bulk": [
+      {
+        "name": "FREEDOM CORTO",
+        "stemsPerBunch": 25
+      },
+      {
+        "name": "FREEDOM LARGO",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "FREEDOM RUSO",
+        "stemsPerBunch": 15
+      },
+      {
+        "name": "BLESSING",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "CORAL REEF",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "HILUX",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "HUMMER",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "HUMMER RUSO",
+        "stemsPerBunch": 15
+      },
+      {
+        "name": "MOMENTUM",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "MOMENTUM RUSO",
+        "stemsPerBunch": 15
+      },
+      {
+        "name": "MONDIAL LARGO",
+        "stemsPerBunch": 15
+      },
+      {
+        "name": "MONDIAL CORTO",
+        "stemsPerBunch": 15
+      },
+      {
+        "name": "MONDIAL RUSO",
+        "stemsPerBunch": 15
+      },
+      {
+        "name": "MOODY BLUES",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "PINK FLOYD",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "PINK MONDIAL LARGO",
+        "stemsPerBunch": 15
+      },
+      {
+        "name": "PINK MONDIAL CORTO",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "QUEEN BERRY",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "QUICK SAND",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "TIFFANY",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "VENDELA LARGO",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "VENDELA CORTO",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "VENDELA RUSO",
+        "stemsPerBunch": 15
+      },
+      {
+        "name": "YELLOW BIKINI",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "YELLOW BIKINI RUSO",
+        "stemsPerBunch": 15
+      },
+      {
+        "name": "EXPLORER CORTO",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "EXPLORER LARGO",
+        "stemsPerBunch": 15
+      },
+      {
+        "name": "DANCING RED LARGO",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "DANCING RED CORTO",
+        "stemsPerBunch": 25
+      },
+      {
+        "name": "RUSCUS",
+        "stemsPerBunch": null
+      },
+      {
+        "name": "YEMAS MONDIAL",
+        "stemsPerBunch": null
+      },
+      {
+        "name": "EUCALIPTO",
+        "stemsPerBunch": null
+      },
+      {
+        "name": "GYPSO",
+        "stemsPerBunch": null
+      },
+      {
+        "name": "YEMAS PINK MONDIAL",
+        "stemsPerBunch": null
+      }
+    ],
+    "guard": [
+      {
+        "name": "FREEDOM CORTO",
+        "stemsPerBunch": 25
+      },
+      {
+        "name": "FREEDOM LARGO",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "FREEDOM RUSO",
+        "stemsPerBunch": 25
+      },
+      {
+        "name": "BLESSING",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "CORAL REEF",
+        "stemsPerBunch": 15
+      },
+      {
+        "name": "HILUX",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "HUMMER",
+        "stemsPerBunch": 15
+      },
+      {
+        "name": "HUMMER RUSO",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "MOMENTUM",
+        "stemsPerBunch": 15
+      },
+      {
+        "name": "MOMENTUM RUSO",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "MONDIAL LARGO",
+        "stemsPerBunch": 15
+      },
+      {
+        "name": "MONDIAL CORTO",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "MONDIAL RUSO",
+        "stemsPerBunch": 15
+      },
+      {
+        "name": "MOODY BLUES",
+        "stemsPerBunch": 15
+      },
+      {
+        "name": "PINK FLOYD",
+        "stemsPerBunch": 15
+      },
+      {
+        "name": "PINK MONDIAL LARGO",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "PINK MONDIAL CORTO",
+        "stemsPerBunch": 15
+      },
+      {
+        "name": "QUEEN BERRY",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "QUICK SAND",
+        "stemsPerBunch": 15
+      },
+      {
+        "name": "TIFFANY",
+        "stemsPerBunch": 15
+      },
+      {
+        "name": "VENDELA LARGO",
+        "stemsPerBunch": 15
+      },
+      {
+        "name": "VENDELA CORTO",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "YELLOW BIKINI",
+        "stemsPerBunch": 15
+      },
+      {
+        "name": "YELLOW BIKINI RUSO",
+        "stemsPerBunch": 20
+      }
+    ]
+  },
+  "p1_p2": {
+    "farmCode": "F1",
+    "label": "Flor que amanece de P2",
+    "sections": ["bulk"],
+    "processed": {
+      "varieties": [
+        "FREEDOM",
+        "BLESSING",
+        "CANDLELIGHT",
+        "CORAL REEF",
+        "DEEP PURPLE",
+        "HILUX",
+        "HUMMER",
+        "MOMENTUM",
+        "MONDIAL",
+        "TIFANY",
+        "PINK FLOYD",
+        "PINK MONDIAL",
+        "PINK OHARA",
+        "QUICK SAND",
+        "SHIMMER",
+        "SOMMERSAND",
+        "STAR PLATINUM",
+        "VENDELA",
+        "WITHE OHARA",
+        "RAINBOW",
+        "SWAM",
+        "YELLOW BIKINI",
+        "QUEEN BERRY",
+        "HIGH MAGIC"
+      ],
+      "columns": [
+        {
+          "key": "B",
+          "process": "LÁMINA PVC",
+          "grade": 40,
+          "stems": 6
+        },
+        {
+          "key": "C",
+          "process": "LÁMINA PVC",
+          "grade": 40,
+          "stems": 12
+        },
+        {
+          "key": "D",
+          "process": "LÁMINA PVC",
+          "grade": 50,
+          "stems": 12
+        },
+        {
+          "key": "E",
+          "process": "LÁMINA VERDE",
+          "grade": 40,
+          "stems": 25
+        },
+        {
+          "key": "F",
+          "process": "LÁMINA VERDE",
+          "grade": 50,
+          "stems": 25
+        },
+        {
+          "key": "G",
+          "process": "LÁMINA VERDE",
+          "grade": 60,
+          "stems": 25
+        },
+        {
+          "key": "H",
+          "process": "LÁMINA VERDE",
+          "grade": 70,
+          "stems": 25
+        },
+        {
+          "key": "I",
+          "process": "LÁMINA VERDE",
+          "grade": 80,
+          "stems": 25
+        },
+        {
+          "key": "J",
+          "process": "LÁMINA VERDE",
+          "grade": 90,
+          "stems": 25
+        },
+        {
+          "key": "K",
+          "process": "LÁMINA VERDE",
+          "grade": 100,
+          "stems": 25
+        },
+        {
+          "key": "L",
+          "process": "LÁMINA NEGRA",
+          "grade": 50,
+          "stems": 10
+        },
+        {
+          "key": "M",
+          "process": "LÁMINA NEGRA",
+          "grade": 60,
+          "stems": 10
+        },
+        {
+          "key": "N",
+          "process": "LÁMINA NEGRA",
+          "grade": 40,
+          "stems": 5
+        },
+        {
+          "key": "O",
+          "process": "LÁMINA NEGRA",
+          "grade": 50,
+          "stems": 5
+        },
+        {
+          "key": "P",
+          "process": "LÁMINA NEGRA",
+          "grade": 60,
+          "stems": 5
+        },
+        {
+          "key": "Q",
+          "process": "LÁMINA NEGRA",
+          "grade": 40,
+          "stems": 20
+        },
+        {
+          "key": "R",
+          "process": "LÁMINA NEGRA",
+          "grade": 50,
+          "stems": 20
+        },
+        {
+          "key": "S",
+          "process": "LÁMINA NEGRA",
+          "grade": 60,
+          "stems": 20
+        },
+        {
+          "key": "T",
+          "process": "LÁMINA NEGRA",
+          "grade": 70,
+          "stems": 20
+        },
+        {
+          "key": "U",
+          "process": "LÁMINA NEGRA",
+          "grade": 40,
+          "stems": 25
+        },
+        {
+          "key": "V",
+          "process": "LÁMINA NEGRA",
+          "grade": 50,
+          "stems": 25
+        },
+        {
+          "key": "W",
+          "process": "LÁMINA NEGRA",
+          "grade": 60,
+          "stems": 25
+        },
+        {
+          "key": "X",
+          "process": "LÁMINA NEGRA",
+          "grade": 70,
+          "stems": 25
+        },
+        {
+          "key": "Y",
+          "process": "LÁMINA NEGRA",
+          "grade": 80,
+          "stems": 25
+        },
+        {
+          "key": "Z",
+          "process": "LÁMINA NEGRA",
+          "grade": 90,
+          "stems": 25
+        },
+        {
+          "key": "AA",
+          "process": "LÁMINA NEGRA",
+          "grade": 100,
+          "stems": 25
+        },
+        {
+          "key": "AB",
+          "process": "LÁMINA BLANCA",
+          "grade": 40,
+          "stems": 10
+        },
+        {
+          "key": "AC",
+          "process": "LÁMINA BLANCA",
+          "grade": 50,
+          "stems": 10
+        },
+        {
+          "key": "AD",
+          "process": "LÁMINA BLANCA",
+          "grade": 40,
+          "stems": 25
+        },
+        {
+          "key": "AE",
+          "process": "LÁMINA BLANCA",
+          "grade": 50,
+          "stems": 25
+        },
+        {
+          "key": "AF",
+          "process": "LÁMINA BLANCA",
+          "grade": 60,
+          "stems": 25
+        },
+        {
+          "key": "AG",
+          "process": "LÁMINA BLANCA",
+          "grade": 70,
+          "stems": 25
+        },
+        {
+          "key": "AH",
+          "process": "LÁMINA BLANCA",
+          "grade": 80,
+          "stems": 25
+        },
+        {
+          "key": "AI",
+          "process": "LÁMINA BLANCA",
+          "grade": 90,
+          "stems": 25
+        },
+        {
+          "key": "AJ",
+          "process": "LÁMINA BLANCA",
+          "grade": 100,
+          "stems": 25
+        },
+        {
+          "key": "AK",
+          "process": "LÁMINA MORADA",
+          "grade": 40,
+          "stems": 25
+        },
+        {
+          "key": "AL",
+          "process": "LÁMINA MORADA",
+          "grade": 50,
+          "stems": 25
+        },
+        {
+          "key": "AM",
+          "process": "LÁMINA MORADA",
+          "grade": 60,
+          "stems": 25
+        },
+        {
+          "key": "AN",
+          "process": "LÁMINA MORADA",
+          "grade": 70,
+          "stems": 25
+        },
+        {
+          "key": "AO",
+          "process": "LÁMINA AZUL",
+          "grade": 40,
+          "stems": 20
+        },
+        {
+          "key": "AP",
+          "process": "LÁMINA AZUL",
+          "grade": 50,
+          "stems": 20
+        },
+        {
+          "key": "AQ",
+          "process": "LÁMINA AZUL",
+          "grade": 60,
+          "stems": 20
+        },
+        {
+          "key": "AR",
+          "process": "LÁMINA AZUL",
+          "grade": 70,
+          "stems": 20
+        },
+        {
+          "key": "AS",
+          "process": "FLOR PARA TERCEROS",
+          "grade": 20,
+          "stems": 20
+        },
+        {
+          "key": "AT",
+          "process": "FLOR PARA TERCEROS",
+          "grade": 25,
+          "stems": 25
+        },
+        {
+          "key": "AU",
+          "process": "FLOR PARA TERCEROS",
+          "grade": 30,
+          "stems": 30
+        },
+        {
+          "key": "AV",
+          "process": "FLOR PARA TERCEROS",
+          "grade": 10,
+          "stems": 10
+        },
+        {
+          "key": "AW",
+          "process": "NACIONAL",
+          "grade": "NACIONAL",
+          "stems": null
+        }
+      ]
+    },
+    "bulk": [
+      {
+        "name": "FREEDOM CORTO",
+        "stemsPerBunch": 25
+      },
+      {
+        "name": "FREEDOM LARGO",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "FREEDOM RUSO",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "BLESSING",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "CANDLELIGHT",
+        "stemsPerBunch": 15
+      },
+      {
+        "name": "CORAL REEF",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "DEEP PURPLE",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "HILUX",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "HUMMER",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "MOMENTUM",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "MONDIAL",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "PINK AMARETO",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "PINK FLOYD",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "PINK MONDIAL",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "PINK OHARA",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "QUICK SAND",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "SHIMMER",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "SOMMERSAND",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "STAR PLATINUM",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "VENDELA",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "WHITE OHARA",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "HIGH MAGIC",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "SWAN",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "MONDIAL",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "QUEEN BERRY",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "PINK FLOYD",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "RUSCUS",
+        "stemsPerBunch": null
+      },
+      {
+        "name": "GYSPO",
+        "stemsPerBunch": null
+      },
+      {
+        "name": "EUCALIPTO",
+        "stemsPerBunch": null
+      }
+    ],
+    "guard": [
+      {
+        "name": "FREEDOM CORTO",
+        "stemsPerBunch": 25
+      },
+      {
+        "name": "FREEDOM LARGO",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "FREEDOM RUSO",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "BLESSING",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "CANDLELIGHT",
+        "stemsPerBunch": 15
+      },
+      {
+        "name": "CORAL REEF",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "DEEP PURPLE",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "HILUX",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "HUMMER",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "MOMENTUM",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "MONDIAL",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "PINK AMARETO",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "PINK FLOYD",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "PINK MONDIAL",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "PINK OHARA",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "QUICK SAND",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "SHIMMER",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "SOMMERSAND",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "STAR PLATINUM",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "VENDELA",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "WHITE OHARA",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "FREEDOM RP",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "MONDIAL RP",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "EUCALIPTOS",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "HIGH MAGIC",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "SWAN",
+        "stemsPerBunch": null
+      }
+    ]
+  },
+  "p2": {
+    "farmCode": "F2",
+    "label": "Inventario P2",
+    "processed": {
+      "varieties": [
+        "FREEDOM",
+        "BLESSING",
+        "CANDLELIGHT",
+        "CORAL REEF",
+        "DEEP PURPLE",
+        "HILUX",
+        "HUMMER",
+        "MOMENTUM",
+        "MONDIAL",
+        "PINK AMARETO",
+        "PINK FLOYD",
+        "PINK MONDIAL",
+        "PINK OHARA",
+        "QUICK SAND",
+        "SHIMMER",
+        "SOMMERSAND",
+        "STAR PLATINUM",
+        "VENDELA",
+        "WHITE OHARA",
+        "QUEEN BERRY",
+        "RAINBOW",
+        "TIFFANY",
+        "YELLOW BIKINY",
+        "SWAM",
+        "HIGH MAGIC"
+      ],
+      "columns": [
+        {
+          "key": "B",
+          "process": "LÁMINA PVC",
+          "grade": 40,
+          "stems": 6
+        },
+        {
+          "key": "C",
+          "process": "LÁMINA PVC",
+          "grade": 40,
+          "stems": 12
+        },
+        {
+          "key": "D",
+          "process": "LÁMINA PVC",
+          "grade": 50,
+          "stems": 12
+        },
+        {
+          "key": "E",
+          "process": "LÁMINA VERDE",
+          "grade": 40,
+          "stems": 25
+        },
+        {
+          "key": "F",
+          "process": "LÁMINA VERDE",
+          "grade": 50,
+          "stems": 25
+        },
+        {
+          "key": "G",
+          "process": "LÁMINA VERDE",
+          "grade": 60,
+          "stems": 25
+        },
+        {
+          "key": "H",
+          "process": "LÁMINA VERDE",
+          "grade": 70,
+          "stems": 25
+        },
+        {
+          "key": "I",
+          "process": "LÁMINA VERDE",
+          "grade": 80,
+          "stems": 25
+        },
+        {
+          "key": "J",
+          "process": "LÁMINA VERDE",
+          "grade": 90,
+          "stems": 25
+        },
+        {
+          "key": "K",
+          "process": "LÁMINA VERDE",
+          "grade": 100,
+          "stems": 25
+        },
+        {
+          "key": "L",
+          "process": "LÁMINA VERDE",
+          "grade": "NAL",
+          "stems": null
+        },
+        {
+          "key": "M",
+          "process": "LÁMINA NEGRA",
+          "grade": 50,
+          "stems": 10
+        },
+        {
+          "key": "N",
+          "process": "LÁMINA NEGRA",
+          "grade": 60,
+          "stems": 10
+        },
+        {
+          "key": "O",
+          "process": "LÁMINA NEGRA",
+          "grade": 40,
+          "stems": 5
+        },
+        {
+          "key": "P",
+          "process": "LÁMINA NEGRA",
+          "grade": 50,
+          "stems": 5
+        },
+        {
+          "key": "Q",
+          "process": "LÁMINA NEGRA",
+          "grade": 60,
+          "stems": 5
+        },
+        {
+          "key": "R",
+          "process": "LÁMINA NEGRA",
+          "grade": 40,
+          "stems": 20
+        },
+        {
+          "key": "S",
+          "process": "LÁMINA NEGRA",
+          "grade": 50,
+          "stems": 20
+        },
+        {
+          "key": "T",
+          "process": "LÁMINA NEGRA",
+          "grade": 60,
+          "stems": 20
+        },
+        {
+          "key": "U",
+          "process": "LÁMINA NEGRA",
+          "grade": 70,
+          "stems": 20
+        },
+        {
+          "key": "V",
+          "process": "LÁMINA NEGRA",
+          "grade": 40,
+          "stems": 25
+        },
+        {
+          "key": "W",
+          "process": "LÁMINA NEGRA",
+          "grade": 50,
+          "stems": 25
+        },
+        {
+          "key": "X",
+          "process": "LÁMINA NEGRA",
+          "grade": 60,
+          "stems": 25
+        },
+        {
+          "key": "Y",
+          "process": "LÁMINA NEGRA",
+          "grade": 70,
+          "stems": 25
+        },
+        {
+          "key": "Z",
+          "process": "LÁMINA NEGRA",
+          "grade": 80,
+          "stems": 25
+        },
+        {
+          "key": "AA",
+          "process": "LÁMINA NEGRA",
+          "grade": 90,
+          "stems": 25
+        },
+        {
+          "key": "AB",
+          "process": "LÁMINA NEGRA",
+          "grade": 100,
+          "stems": 25
+        },
+        {
+          "key": "AC",
+          "process": "LÁMINA BLANCA",
+          "grade": 40,
+          "stems": 10
+        },
+        {
+          "key": "AD",
+          "process": "LÁMINA BLANCA",
+          "grade": 50,
+          "stems": 10
+        },
+        {
+          "key": "AE",
+          "process": "LÁMINA BLANCA",
+          "grade": 40,
+          "stems": 25
+        },
+        {
+          "key": "AF",
+          "process": "LÁMINA BLANCA",
+          "grade": 50,
+          "stems": 25
+        },
+        {
+          "key": "AG",
+          "process": "LÁMINA BLANCA",
+          "grade": 60,
+          "stems": 25
+        },
+        {
+          "key": "AH",
+          "process": "LÁMINA BLANCA",
+          "grade": 70,
+          "stems": 25
+        },
+        {
+          "key": "AI",
+          "process": "LÁMINA BLANCA",
+          "grade": 80,
+          "stems": 25
+        },
+        {
+          "key": "AJ",
+          "process": "LÁMINA BLANCA",
+          "grade": 90,
+          "stems": 25
+        },
+        {
+          "key": "AK",
+          "process": "LÁMINA BLANCA",
+          "grade": 100,
+          "stems": 25
+        },
+        {
+          "key": "AL",
+          "process": "LÁMINA ROJA",
+          "grade": 40,
+          "stems": 25
+        },
+        {
+          "key": "AM",
+          "process": "LÁMINA ROJA",
+          "grade": 50,
+          "stems": 25
+        },
+        {
+          "key": "AN",
+          "process": "LÁMINA ROJA",
+          "grade": 60,
+          "stems": 25
+        },
+        {
+          "key": "AO",
+          "process": "LÁMINA ROJA",
+          "grade": 70,
+          "stems": 25
+        },
+        {
+          "key": "AP",
+          "process": "LÁMINA AZUL",
+          "grade": 40,
+          "stems": 20
+        },
+        {
+          "key": "AQ",
+          "process": "LÁMINA AZUL",
+          "grade": 50,
+          "stems": 20
+        },
+        {
+          "key": "AR",
+          "process": "LÁMINA AZUL",
+          "grade": 60,
+          "stems": 20
+        },
+        {
+          "key": "AS",
+          "process": "LÁMINA AZUL",
+          "grade": 70,
+          "stems": 20
+        },
+        {
+          "key": "AT",
+          "process": "FLOR PARA TERCEROS",
+          "grade": 20,
+          "stems": 20
+        },
+        {
+          "key": "AU",
+          "process": "FLOR PARA TERCEROS",
+          "grade": 25,
+          "stems": 25
+        },
+        {
+          "key": "AV",
+          "process": "FLOR PARA TERCEROS",
+          "grade": 30,
+          "stems": 30
+        },
+        {
+          "key": "AW",
+          "process": "FLOR PARA TERCEROS",
+          "grade": 10,
+          "stems": 10
+        }
+      ]
+    },
+    "bulk": [
+      {
+        "name": "FREEDOM CORTO",
+        "stemsPerBunch": 25
+      },
+      {
+        "name": "FREEDOM LARGO",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "FREEDOM RUSO",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "BLESSING",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "CANDLELIGHT",
+        "stemsPerBunch": 15
+      },
+      {
+        "name": "CORAL REEF",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "DEEP PURPLE",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "HILUX",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "HUMMER",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "MOMENTUM",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "MONDIAL",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "PINK AMARETO",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "PINK FLOYD",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "PINK MONDIAL",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "PINK OHARA",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "QUICK SAND",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "SHIMMER",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "SOMMERSAND",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "STAR PLATINUM",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "VENDELA",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "WHITE OHARA",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "HIGH MAGIC",
+        "stemsPerBunch": 25
+      },
+      {
+        "name": "SWAN",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "HIGH MAGIC",
+        "stemsPerBunch": 20
+      }
+    ],
+    "guard": [
+      {
+        "name": "FREEDOM CORTO",
+        "stemsPerBunch": 25
+      },
+      {
+        "name": "FREEDOM LARGO",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "FREEDOM RUSO",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "BLESSING",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "CANDLELIGHT",
+        "stemsPerBunch": 15
+      },
+      {
+        "name": "CORAL REEF",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "DEEP PURPLE",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "HILUX",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "HUMMER",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "MOMENTUM",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "MONDIAL",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "PINK AMARETO",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "PINK FLOYD",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "PINK MONDIAL",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "PINK OHARA",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "QUICK SAND",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "SHIMMER",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "SOMMERSAND",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "STAR PLATINUM",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "VENDELA",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "WHITE OHARA",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "FREEDOM RP",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "MONDIAL RP",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "EUCALIPTOS",
+        "stemsPerBunch": 20
+      }
+    ]
+  }
+}

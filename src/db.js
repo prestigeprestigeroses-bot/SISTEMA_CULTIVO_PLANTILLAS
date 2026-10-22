@@ -1,5 +1,7 @@
 const { Pool } = require('pg');
 const { defaultRecordsForFarm, templateRowsForFarm } = require('./defaults');
+const { blankFieldData, normalizeFieldData } = require('./field-data');
+const { blankInventory, normalizeInventory } = require('./inventory');
 
 const connectionString = process.env.DATABASE_URL;
 const pool = connectionString
@@ -15,6 +17,8 @@ const memory = {
     { id: 2, code: 'F2', name: 'Finca P2' },
   ],
   weeks: new Map(),
+  fieldWeeks: new Map(),
+  inventoryMonths: new Map(),
 };
 
 function memoryKey(farmId, year, week) {
@@ -63,6 +67,25 @@ async function migrate() {
       actual INTEGER NOT NULL DEFAULT 0 CHECK (actual >= 0),
       UNIQUE (record_id, day_of_week)
     );
+
+    CREATE TABLE IF NOT EXISTS weekly_field_data (
+      farm_id INTEGER NOT NULL REFERENCES farms(id) ON DELETE CASCADE,
+      week_year INTEGER NOT NULL,
+      week_number INTEGER NOT NULL CHECK (week_number BETWEEN 1 AND 53),
+      payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (farm_id, week_year, week_number)
+    );
+
+    CREATE TABLE IF NOT EXISTS monthly_inventories (
+      farm_id INTEGER NOT NULL REFERENCES farms(id) ON DELETE CASCADE,
+      template_key VARCHAR(30) NOT NULL,
+      inventory_year INTEGER NOT NULL,
+      inventory_month SMALLINT NOT NULL CHECK (inventory_month BETWEEN 1 AND 12),
+      payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (farm_id, template_key, inventory_year, inventory_month)
+    );
   `);
 
   await pool.query(`
@@ -84,6 +107,69 @@ async function getFarms() {
   if (!pool) return memory.farms;
   const { rows } = await pool.query('SELECT id, code, name FROM farms ORDER BY id');
   return rows;
+}
+
+async function getFieldData(farmId, year, week) {
+  const farms = await getFarms();
+  const farm = farms.find((item) => Number(item.id) === Number(farmId));
+  if (!farm) throw new Error('Finca inválida');
+  const defaults = blankFieldData();
+  if (farm.code === 'F2') defaults.beds = 1313;
+  if (farm.code === 'F1') defaults.beds = 1523;
+  if (!pool) {
+    const saved = memory.fieldWeeks.get(memoryKey(farmId, year, week));
+    return { data: saved || defaults, saved: Boolean(saved) };
+  }
+  const { rows } = await pool.query(
+    'SELECT payload FROM weekly_field_data WHERE farm_id = $1 AND week_year = $2 AND week_number = $3',
+    [farmId, year, week],
+  );
+  return { data: rows.length ? normalizeFieldData(rows[0].payload) : defaults, saved: rows.length > 0 };
+}
+
+async function saveFieldData(farmId, year, week, input) {
+  const farms = await getFarms();
+  if (!farms.some((farm) => Number(farm.id) === Number(farmId))) throw new Error('Finca inválida');
+  const data = normalizeFieldData(input);
+  if (!pool) {
+    memory.fieldWeeks.set(memoryKey(farmId, year, week), data);
+  } else {
+    await pool.query(`
+      INSERT INTO weekly_field_data (farm_id, week_year, week_number, payload)
+      VALUES ($1, $2, $3, $4::jsonb)
+      ON CONFLICT (farm_id, week_year, week_number)
+      DO UPDATE SET payload = EXCLUDED.payload, updated_at = NOW()
+    `, [farmId, year, week, JSON.stringify(data)]);
+  }
+  return { data, saved: true };
+}
+
+async function getInventory(farmId, templateKey, year, month) {
+  const key = `${farmId}:${templateKey}:${year}:${month}`;
+  if (!pool) {
+    const data = memory.inventoryMonths.get(key);
+    return { data: data || blankInventory(), saved: Boolean(data) };
+  }
+  const { rows } = await pool.query(
+    'SELECT payload FROM monthly_inventories WHERE farm_id = $1 AND template_key = $2 AND inventory_year = $3 AND inventory_month = $4',
+    [farmId, templateKey, year, month],
+  );
+  return { data: rows.length ? rows[0].payload : blankInventory(), saved: rows.length > 0 };
+}
+
+async function saveInventory(farmId, templateKey, template, year, month, input) {
+  const data = normalizeInventory(template, year, month, input);
+  const existing = template.sections ? (await getInventory(farmId, templateKey, year, month)).data : null;
+  const stored = existing ? { ...existing, ...data } : data;
+  const key = `${farmId}:${templateKey}:${year}:${month}`;
+  if (!pool) memory.inventoryMonths.set(key, stored);
+  else await pool.query(`
+    INSERT INTO monthly_inventories (farm_id, template_key, inventory_year, inventory_month, payload)
+    VALUES ($1, $2, $3, $4, $5::jsonb)
+    ON CONFLICT (farm_id, template_key, inventory_year, inventory_month)
+    DO UPDATE SET payload = EXCLUDED.payload, updated_at = NOW()
+  `, [farmId, templateKey, year, month, JSON.stringify(stored)]);
+  return { data, saved: true };
 }
 
 async function getWeekWithDefaults(farmId, year, week) {
@@ -251,4 +337,4 @@ async function health() {
   return { database: 'postgresql', persistent: true };
 }
 
-module.exports = { migrate, getFarms, getWeek, getWeekWithDefaults, replaceWeek, getHistory, health };
+module.exports = { migrate, getFarms, getWeek, getWeekWithDefaults, replaceWeek, getHistory, getFieldData, saveFieldData, getInventory, saveInventory, health };
