@@ -906,9 +906,9 @@ function updateCaptureInputContext(input) {
 function keepFocusedCaptureRowVisible() {
   const input = document.activeElement;
   if (!(input instanceof HTMLInputElement)) return;
-  const scrollArea = input.closest('.mobile-sheet-scroll, .field-editor');
+  const scrollArea = input.closest('.mobile-sheet-scroll, .field-editor, .inventory-expanded #inventoryEditor');
   if (!scrollArea) return;
-  const row = input.closest('.mobile-record, .field-mobile-row, .beds-line');
+  const row = input.closest('.mobile-record, .field-mobile-row, .beds-line, .inventory-mobile-card, .inventory-mobile-row, .inventory-fn-mobile-row');
   if (!row) return;
   const areaRect = scrollArea.getBoundingClientRect();
   const rowRect = row.getBoundingClientRect();
@@ -932,6 +932,7 @@ elements.mobileCapture.addEventListener('focusout', () => {
 document.querySelectorAll('.field-editor').forEach((editor) => {
   editor.addEventListener('focusin', () => window.requestAnimationFrame(keepFocusedCaptureRowVisible));
 });
+document.querySelector('#inventoryEditor').addEventListener('focusin', () => window.requestAnimationFrame(keepFocusedCaptureRowVisible));
 
 let captureLayoutWidth = window.innerWidth;
 
@@ -940,6 +941,7 @@ function setCaptureExpanded(target, expanded) {
     [elements.sheetCard, 'sheet-expanded', elements.expandSheet],
     [elements.temperatureView, 'field-expanded', elements.temperatureView.querySelector('.field-expand')],
     [elements.waterView, 'field-expanded', elements.waterView.querySelector('.field-expand')],
+    [document.querySelector('#inventoryView'), 'inventory-expanded', document.querySelector('#expandInventory')],
   ]) {
     const active = expanded && card === target;
     card.classList.toggle(className, active);
@@ -960,6 +962,10 @@ document.querySelectorAll('.field-expand').forEach((button) => button.addEventLi
   const view = button.closest('.field-view');
   setCaptureExpanded(view, !view.classList.contains('field-expanded'));
 }));
+document.querySelector('#expandInventory').addEventListener('click', () => {
+  const view = document.querySelector('#inventoryView');
+  setCaptureExpanded(view, !view.classList.contains('inventory-expanded'));
+});
 window.visualViewport?.addEventListener('resize', syncCaptureViewport);
 window.visualViewport?.addEventListener('scroll', syncCaptureViewport);
 window.addEventListener('resize', () => {
