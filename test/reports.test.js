@@ -44,11 +44,12 @@ test('Excel de inventario incluye FN y total de finca', async () => {
   assert.equal(farm.worksheets[0].getCell('C6').value, total);
 });
 
-test('Excel P1 distingue grado, tabacos a granel y ramos de guarde', async () => {
+test('Excel P1 distingue grado y tabacos en granel y guarde', async () => {
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(await buildInventoryWorkbook({ farm: p1, template: inventoryTemplate('p1', 'F1'),
     year: 2026, month: 10, data: blankInventory() }));
   assert.equal(workbook.getWorksheet('Inventario ramos').getCell('D4').value, 'GRADO');
   assert.equal(workbook.getWorksheet('Flor a granel').getCell('C4').value, 'TABACOS');
-  assert.equal(workbook.getWorksheet('Flor de guarde').getCell('C4').value, 'RAMOS');
+  assert.equal(workbook.getWorksheet('Flor de guarde').getCell('C4').value, 'TABACOS');
+  assert.equal(workbook.getWorksheet('Flor de guarde').getCell('D4').value, 'TALLOS / TABACO');
 });

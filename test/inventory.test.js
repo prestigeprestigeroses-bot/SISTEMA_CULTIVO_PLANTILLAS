@@ -100,7 +100,7 @@ test('granel y guarde suman los días del mes y usan su propio factor por varied
   assert.equal(inventorySummary(template, data, 'guard', 1).totals.red, 75);
 });
 
-test('FN suma tallos directos en granel sin aumentar ramos ni afectar guarde', () => {
+test('FN suma tallos directos en granel sin aumentar tabacos ni afectar guarde', () => {
   for (const template of Object.values(templates)) {
     const data = blankInventory();
     data.bulk['0:1'] = 2;

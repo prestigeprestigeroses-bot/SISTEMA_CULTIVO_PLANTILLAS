@@ -16,7 +16,7 @@ Sistema web para registrar la proyección y producción real de flor de dos finc
 - Secciones de **Temperatura** y **Registro hídrico** por finca y semana, con captura diaria adaptable a celular.
 - Sección de **Poscosecha** con dos inventarios para P1 (inventario propio y flor que amanece de P2) y uno para P2. El inventario propio de P1 y el de P2 incluyen inventario ramos, flor a granel y de guarde; flor que amanece de P2 solo incluye flor a granel.
 - Tres accesos separados: **Producción** (edita proyección, temperatura y agua), **Poscosecha** (edita inventarios) y **Consulta** (ve todos los registros de P1 y P2 sin modificarlos).
-- Captura por fecha para inventario ramos y por mes/día para granel y guarde; el granel cuenta tabacos, la guarde cuenta ramos y los tallos se calculan con los factores de cada plantilla.
+- Captura por fecha para inventario ramos y por mes/día para granel y guarde; tanto granel como guarde cuentan tabacos, y los tallos se calculan con los factores de cada plantilla.
 - Promedios semanales de temperatura, humedad y precipitación a partir de los días registrados.
 - Consumo de P1 calculado como lectura final menos lectura inicial; consumo de P2 como goteo más cacho. El consumo acumulado en litros por cama usa el consumo m³ × 1000 / número de camas.
 - Exportación `.xlsx` de proyección, temperatura, registro hídrico, cada inventario y total mensual de inventarios por finca.

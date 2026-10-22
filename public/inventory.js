@@ -136,8 +136,8 @@
   function gridEditor(result) {
     const section = model.section;
     const isBulk = section === 'bulk';
-    const unit = isBulk ? 'tabacos' : 'ramos';
-    const factorUnit = isBulk ? 'tabaco' : 'ramo';
+    const unit = 'tabacos';
+    const factorUnit = 'tabaco';
     const rows = model.template[section];
     const days = period().days;
     if (!model.gridDay || model.gridDay > days) model.gridDay = period().day;
