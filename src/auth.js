@@ -100,7 +100,7 @@ function createAuth(config) {
       ? next() : res.status(403).json({ error: 'Este acceso no tiene permiso para esta sección' }));
   }
 
-  function requireSameOrigin(req, res, next) {
+  function requireSameOrigin(req, res, next) {//r5454
     if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
     const fetchSite = req.get('sec-fetch-site');
     const origin = req.get('origin');
