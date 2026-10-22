@@ -34,10 +34,21 @@ test('Excel de inventario incluye FN y total de finca', async () => {
   await workbook.xlsx.load(buffer);
   assert.deepEqual(workbook.worksheets.map((sheet) => sheet.name), ['Resumen', 'Flor a granel']);
   assert.equal(workbook.getWorksheet('Flor a granel').getCell('A6').value, 'FN');
+  assert.equal(workbook.getWorksheet('Flor a granel').getCell('C4').value, 'TABACOS');
+  assert.equal(workbook.getWorksheet('Flor a granel').getCell('D4').value, 'TALLOS / TABACO');
   const total = inventoryMonthSummary(template, data, 2026, 10).stems;
   assert.equal(workbook.getWorksheet('Resumen').getCell('B6').value, total);
   const farm = new ExcelJS.Workbook();
   await farm.xlsx.load(await buildFarmInventoryWorkbook({ farm: p1, year: 2026, month: 10,
     summaries: [{ label: template.label, summary: inventoryMonthSummary(template, data, 2026, 10) }] }));
   assert.equal(farm.worksheets[0].getCell('C6').value, total);
+});
+
+test('Excel P1 distingue grado, tabacos a granel y ramos de guarde', async () => {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(await buildInventoryWorkbook({ farm: p1, template: inventoryTemplate('p1', 'F1'),
+    year: 2026, month: 10, data: blankInventory() }));
+  assert.equal(workbook.getWorksheet('Inventario ramos').getCell('D4').value, 'GRADO');
+  assert.equal(workbook.getWorksheet('Flor a granel').getCell('C4').value, 'TABACOS');
+  assert.equal(workbook.getWorksheet('Flor de guarde').getCell('C4').value, 'RAMOS');
 });

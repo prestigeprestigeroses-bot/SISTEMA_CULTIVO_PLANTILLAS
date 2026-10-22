@@ -11,7 +11,7 @@
         "HUMMER",
         "MOMENTUM",
         "MONDIAL",
-        "MODY BLU",
+        "MOODY BLUE",
         "PINK FLOYD",
         "PINK MONDIAL",
         "QUEEN BERRY",
@@ -19,11 +19,11 @@
         "TIFFANY",
         "VENDELA",
         "YELLOW BIKINI",
-        "P.OHARA",
+        "PINK OHARA",
         "SHIMMER",
-        "D.PURPLE",
-        "SOMMER",
-        "SWAM"
+        "DEEP PURPLE",
+        "SUMMERSAND",
+        "SWAN"
       ],
       "columns": [
         {
@@ -424,7 +424,7 @@
         "stemsPerBunch": 15
       },
       {
-        "name": "MOODY BLUES",
+        "name": "MOODY BLUE",
         "stemsPerBunch": 20
       },
       {
@@ -562,7 +562,7 @@
         "stemsPerBunch": 15
       },
       {
-        "name": "MOODY BLUES",
+        "name": "MOODY BLUE",
         "stemsPerBunch": 15
       },
       {
@@ -628,12 +628,12 @@
         "PINK OHARA",
         "QUICK SAND",
         "SHIMMER",
-        "SOMMERSAND",
+        "SUMMERSAND",
         "STAR PLATINUM",
         "VENDELA",
         "WITHE OHARA",
         "RAINBOW",
-        "SWAM",
+        "SWAN",
         "YELLOW BIKINI",
         "QUEEN BERRY",
         "HIGH MAGIC"
@@ -999,7 +999,7 @@
         "stemsPerBunch": 20
       },
       {
-        "name": "SOMMERSAND",
+        "name": "SUMMERSAND",
         "stemsPerBunch": 20
       },
       {
@@ -1117,7 +1117,7 @@
         "stemsPerBunch": 20
       },
       {
-        "name": "SOMMERSAND",
+        "name": "SUMMERSAND",
         "stemsPerBunch": 20
       },
       {
@@ -1174,7 +1174,7 @@
         "PINK OHARA",
         "QUICK SAND",
         "SHIMMER",
-        "SOMMERSAND",
+        "SUMMERSAND",
         "STAR PLATINUM",
         "VENDELA",
         "WHITE OHARA",
@@ -1182,7 +1182,7 @@
         "RAINBOW",
         "TIFFANY",
         "YELLOW BIKINY",
-        "SWAM",
+        "SWAN",
         "HIGH MAGIC"
       ],
       "columns": [
@@ -1546,7 +1546,7 @@
         "stemsPerBunch": 20
       },
       {
-        "name": "SOMMERSAND",
+        "name": "SUMMERSAND",
         "stemsPerBunch": 20
       },
       {
@@ -1644,7 +1644,7 @@
         "stemsPerBunch": 20
       },
       {
-        "name": "SOMMERSAND",
+        "name": "SUMMERSAND",
         "stemsPerBunch": 20
       },
       {

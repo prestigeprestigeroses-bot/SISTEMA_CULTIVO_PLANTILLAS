@@ -80,8 +80,10 @@ async function buildFieldWorkbook({ farm, year, week, data, kind }) {
 function addInventorySection(workbook, farm, period, template, data, section, year, month) {
   const sheet = setupSheet(workbook, SECTION_NAMES[section], `${SECTION_NAMES[section].toUpperCase()} · ${template.label.toUpperCase()}`,
     farm, period, section === 'processed'
-      ? ['DÍA', 'VARIEDAD', 'LÁMINA', 'CALIBRE', 'UNIDADES', 'TALLOS / UNIDAD', 'TALLOS']
-      : ['DÍA', 'VARIEDAD', 'RAMOS', 'TALLOS / RAMO', 'TALLOS']);
+      ? ['DÍA', 'VARIEDAD', 'LÁMINA', 'GRADO', 'UNIDADES', 'TALLOS / UNIDAD', 'TALLOS']
+      : section === 'bulk'
+        ? ['DÍA', 'VARIEDAD', 'TABACOS', 'TALLOS / TABACO', 'TALLOS']
+        : ['DÍA', 'VARIEDAD', 'RAMOS', 'TALLOS / RAMO', 'TALLOS']);
   sheet.getColumn(2).width = 27;
   const days = new Date(Date.UTC(year, month, 0)).getUTCDate();
   if (section === 'processed') {
@@ -115,7 +117,7 @@ async function buildInventoryWorkbook({ farm, template, year, month, data }) {
   const period = `${year}-${String(month).padStart(2, '0')}`;
   const summary = inventoryMonthSummary(template, normalized, year, month);
   const sheet = setupSheet(workbook, 'Resumen', `INVENTARIO · ${template.label.toUpperCase()}`, farm, period,
-    ['SECCIÓN', 'TALLOS', 'RAMOS / UNIDADES', 'FN TALLOS', 'SIN CONVERSIÓN']);
+    ['SECCIÓN', 'TALLOS', 'TABACOS / RAMOS / UNIDADES', 'FN TALLOS', 'SIN CONVERSIÓN']);
   for (const section of availableSections(template)) {
     const item = summary.sections[section];
     sheet.addRow([SECTION_NAMES[section], item.stems, item.units, item.fnStems, item.unweighted]);

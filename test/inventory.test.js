@@ -46,6 +46,17 @@ test('inventario ramos P1 conserva columnas previas y aplica nuevas láminas y f
   assert.equal(templates.p2.processed.columns.length, 48);
 });
 
+test('nombres corregidos de variedades conservan sus posiciones y registros', () => {
+  const varieties = templates.p1.processed.varieties;
+  for (const [index, name] of [[7, 'MOODY BLUE'], [15, 'PINK OHARA'], [17, 'DEEP PURPLE'], [18, 'SUMMERSAND'], [19, 'SWAN']]) {
+    assert.equal(varieties[index], name);
+  }
+  const data = blankInventory();
+  data.processed['21:19:B'] = 2;
+  assert.equal(inventorySummary(templates.p1, data, 'processed', 21).details[19].name, 'SWAN');
+  assert.equal(inventorySummary(templates.p1, data, 'processed', 21).details[19].stems, 12);
+});
+
 test('flor que amanece de P2 guarda solo granel sin borrar datos históricos ocultos', async () => {
   const template = inventoryTemplate('p1_p2', 'F1');
   const period = [2040, 10];

@@ -16,7 +16,7 @@ Sistema web para registrar la proyección y producción real de flor de dos finc
 - Secciones de **Temperatura** y **Registro hídrico** por finca y semana, con captura diaria adaptable a celular.
 - Sección de **Poscosecha** con dos inventarios para P1 (inventario propio y flor que amanece de P2) y uno para P2. El inventario propio de P1 y el de P2 incluyen inventario ramos, flor a granel y de guarde; flor que amanece de P2 solo incluye flor a granel.
 - Tres accesos separados: **Producción** (edita proyección, temperatura y agua), **Poscosecha** (edita inventarios) y **Consulta** (ve todos los registros de P1 y P2 sin modificarlos).
-- Captura por fecha para inventario ramos y por mes/día para granel y guarde; totales de ramos y tallos automáticos usando los factores de cada plantilla.
+- Captura por fecha para inventario ramos y por mes/día para granel y guarde; el granel cuenta tabacos, la guarde cuenta ramos y los tallos se calculan con los factores de cada plantilla.
 - Promedios semanales de temperatura, humedad y precipitación a partir de los días registrados.
 - Consumo de P1 calculado como lectura final menos lectura inicial; consumo de P2 como goteo más cacho. El consumo acumulado en litros por cama usa el consumo m³ × 1000 / número de camas.
 - Exportación `.xlsx` de proyección, temperatura, registro hídrico, cada inventario y total mensual de inventarios por finca.
@@ -66,6 +66,6 @@ Los registros de temperatura y agua también se autoguardan al modificar un dato
 
 En **Poscosecha**, elige la finca, el tipo de inventario y la fecha. El inventario ramos se captura para ese día; granel y guarde muestran los días del mes. Los inventarios se autoguardan por finca, tipo, año y mes en PostgreSQL; **Guardar inventario** permite hacerlo de inmediato. Las presentaciones sin factor de tallos quedan en «Cantidades sin conversión», sin inventarles un equivalente. En modo demostración, los datos duran hasta reiniciar el servidor.
 
-En **Flor a granel**, la columna **FN** (fin de corte) aparece después del día 31. Sus cantidades son tallos directos: se suman a **Total tallos** sin multiplicarse por el factor de tallos por ramo ni aumentar **Total ramos**. En celular, FN tiene una sección propia debajo de la captura diaria.
+En **Flor a granel**, la columna **FN** (fin de corte) aparece después del día 31. Sus cantidades son tallos directos: se suman a **Total tallos** sin multiplicarse por el factor de tallos por tabaco ni aumentar **Total tabacos**. En celular, FN tiene una sección propia debajo de la captura diaria.
 
 El total de tallos de la finca corresponde al **mes seleccionado** y suma los tallos convertibles registrados en todas sus plantillas de inventario. P1 incluye su inventario propio y «Flor que amanece de P2»; P2 incluye el inventario P2. Las cantidades sin factor de conversión quedan fuera del total de tallos y se muestran por separado en el Excel del inventario. El total es una suma de registros mensuales, no un saldo de existencias al cierre del mes.
