@@ -32,6 +32,9 @@ const elements = {
   projectionBody: document.querySelector('#projectionBody'),
   projectionFoot: document.querySelector('#projectionFoot'),
   mobileCapture: document.querySelector('#mobileCapture'),
+  captureInputContext: document.querySelector('#captureInputContext'),
+  captureInputLabel: document.querySelector('#captureInputLabel'),
+  captureInputValue: document.querySelector('#captureInputValue'),
   sheetCard: document.querySelector('#sheetCard'),
   expandSheet: document.querySelector('#expandSheet'),
   saveSheetButton: document.querySelector('#saveSheetButton'),
@@ -694,6 +697,7 @@ elements.mobileCapture.addEventListener('click', (event) => {
 elements.mobileCapture.addEventListener('input', (event) => {
   const input = event.target.closest('input');
   if (!input) return;
+  updateCaptureInputContext(input);
   const rowIndex = Number(input.closest('[data-mobile-row]').dataset.mobileRow);
   const value = Math.max(0, Number.parseInt(input.value, 10) || 0);
   if (input.dataset.field === 'arrangements') {
@@ -798,7 +802,53 @@ function syncCaptureViewport() {
   const viewport = window.visualViewport;
   document.documentElement.style.setProperty('--capture-height', `${Math.round(viewport?.height || window.innerHeight)}px`);
   document.documentElement.style.setProperty('--capture-top', `${Math.round(viewport?.offsetTop || 0)}px`);
+  if (document.body.classList.contains('capture-open')) window.requestAnimationFrame(keepFocusedCaptureRowVisible);
 }
+
+function updateCaptureInputContext(input) {
+  if (!elements.sheetCard.classList.contains('sheet-expanded')) return;
+  const row = input.closest('.mobile-record');
+  if (!row) return;
+  const block = row.querySelector('.mobile-block').textContent.trim();
+  const variety = row.querySelector('.mobile-variety').textContent.trim();
+  const kind = input.dataset.field === 'arrangements' ? 'Arreglos' : input.dataset.kind === 'projected' ? 'Proyección' : 'Real';
+  const day = input.dataset.day === undefined ? '' : ` · ${DAYS[Number(input.dataset.day)]}`;
+  elements.captureInputLabel.textContent = `${variety} · Bloque ${block} · ${kind}${day}`;
+  elements.captureInputValue.textContent = input.value || '0';
+  elements.captureInputContext.hidden = false;
+}
+
+function keepFocusedCaptureRowVisible() {
+  const input = document.activeElement;
+  if (!(input instanceof HTMLInputElement)) return;
+  const scrollArea = input.closest('.mobile-sheet-scroll, .field-editor');
+  if (!scrollArea) return;
+  const row = input.closest('.mobile-record, .field-mobile-row, .beds-line');
+  if (!row) return;
+  const areaRect = scrollArea.getBoundingClientRect();
+  const rowRect = row.getBoundingClientRect();
+  if (!areaRect.height) return;
+  const topPadding = input.closest('.mobile-sheet-scroll') ? 40 : 10;
+  if (rowRect.top < areaRect.top + topPadding || rowRect.bottom > areaRect.bottom - 8) {
+    scrollArea.scrollTop += rowRect.top - areaRect.top - Math.max(topPadding, (areaRect.height - rowRect.height) / 2);
+  }
+}
+
+elements.mobileCapture.addEventListener('focusin', (event) => {
+  if (!(event.target instanceof HTMLInputElement)) return;
+  updateCaptureInputContext(event.target);
+  window.requestAnimationFrame(keepFocusedCaptureRowVisible);
+});
+elements.mobileCapture.addEventListener('focusout', () => {
+  window.requestAnimationFrame(() => {
+    if (!elements.mobileCapture.contains(document.activeElement)) elements.captureInputContext.hidden = true;
+  });
+});
+document.querySelectorAll('.field-editor').forEach((editor) => {
+  editor.addEventListener('focusin', () => window.requestAnimationFrame(keepFocusedCaptureRowVisible));
+});
+
+let captureLayoutWidth = window.innerWidth;
 
 function setCaptureExpanded(target, expanded) {
   for (const [card, className, button] of [
@@ -812,7 +862,11 @@ function setCaptureExpanded(target, expanded) {
     button.textContent = active ? '✕ Cerrar' : '⛶ Pantalla completa';
   }
   document.body.classList.toggle('capture-open', expanded);
-  if (expanded) syncCaptureViewport();
+  if (!expanded) elements.captureInputContext.hidden = true;
+  if (expanded) {
+    captureLayoutWidth = window.innerWidth;
+    syncCaptureViewport();
+  }
   if (state.year && state.week) renderPeriod();
 }
 
@@ -823,7 +877,20 @@ document.querySelectorAll('.field-expand').forEach((button) => button.addEventLi
 }));
 window.visualViewport?.addEventListener('resize', syncCaptureViewport);
 window.visualViewport?.addEventListener('scroll', syncCaptureViewport);
-window.addEventListener('resize', syncCaptureViewport);
+window.addEventListener('resize', () => {
+  if (document.body.classList.contains('capture-open') && Math.abs(window.innerWidth - captureLayoutWidth) > 120) {
+    closeCaptureOnOrientationChange();
+    return;
+  }
+  syncCaptureViewport();
+});
+function closeCaptureOnOrientationChange() {
+  if (!document.body.classList.contains('capture-open')) return;
+  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  setCaptureExpanded(null, false);
+}
+window.addEventListener('orientationchange', closeCaptureOnOrientationChange);
+window.screen.orientation?.addEventListener?.('change', closeCaptureOnOrientationChange);
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && document.body.classList.contains('capture-open')) setCaptureExpanded(null, false);
 });
