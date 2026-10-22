@@ -68,6 +68,7 @@
 
   document.querySelector('#logoutButton').addEventListener('click', async () => {
     try {
+      if (window.flushPendingChanges && !(await window.flushPendingChanges())) return;
       const response = await fetch('/api/auth/logout', { method: 'POST' });
       if (!response.ok) throw new Error('No se pudo cerrar la sesión');
       window.location.reload();

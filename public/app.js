@@ -10,12 +10,50 @@ const state = {
   dirty: false,
   fromTemplate: false,
   loading: false,
-  selectedDay: 0,
+  selectedDay: todayIndex(),
   fieldData: null,
   fieldDirty: false,
-  fieldDay: 0,
+  fieldDay: todayIndex(),
   activeView: 'projection',
 };
+
+function todayIndex() { return (new Date().getDay() + 6) % 7; }
+
+function createAutosave(persist, delay = 1000) {
+  let timer;
+  let revision = 0;
+  let savedRevision = 0;
+  let pending = null;
+  async function flush() {
+    clearTimeout(timer);
+    timer = null;
+    if (pending) {
+      if (!(await pending)) return false;
+      return flush();
+    }
+    if (revision === savedRevision) return true;
+    const savingRevision = revision;
+    pending = Promise.resolve().then(() => persist(() => revision === savingRevision));
+    let success;
+    try { success = await pending; }
+    catch (error) { showToast(error.message || 'No se pudo autoguardar', 'error'); success = false; }
+    finally { pending = null; renderSaveState(); }
+    if (!success) return false;
+    savedRevision = savingRevision;
+    return flush();
+  }
+  return {
+    mark() {
+      revision += 1;
+      clearTimeout(timer);
+      timer = setTimeout(() => { void flush(); }, delay);
+    },
+    flush,
+    reset() { clearTimeout(timer); timer = null; revision = 0; savedRevision = 0; },
+    get saving() { return Boolean(pending); },
+  };
+}
+window.createAutosave = createAutosave;
 
 const elements = {
   farmSelect: document.querySelector('#farmSelect'),
@@ -122,6 +160,7 @@ function totals() {
 
 function setDirty(value) {
   state.dirty = value;
+  if (value && window.authApp?.canEdit('production')) projectionAutosave.mark();
   renderSaveState();
 }
 
@@ -129,12 +168,16 @@ function renderSaveState() {
   if (window.authApp?.role === 'viewer') {
     elements.saveState.className = 'save-state saved';
     elements.saveState.innerHTML = '<span></span> Solo lectura';
+    elements.saveState.title = 'Solo lectura';
     return;
   }
   const changed = state.dirty || state.fieldDirty || window.inventoryApp?.dirty;
   const needsSave = changed || state.fromTemplate;
   elements.saveState.className = `save-state ${needsSave ? 'dirty' : 'saved'}`;
-  elements.saveState.innerHTML = `<span></span> ${changed ? 'Cambios sin guardar' : state.fromTemplate ? 'Plantilla sin guardar' : 'Todo guardado'}`;
+  const saving = projectionAutosave.saving || fieldAutosave.saving || window.inventoryApp?.saving;
+  const label = saving ? 'Autoguardando…' : changed ? 'Pendiente de autoguardado' : state.fromTemplate ? 'Plantilla sin guardar' : 'Todo guardado';
+  elements.saveState.innerHTML = `<span></span> ${label}`;
+  elements.saveState.title = label;
 }
 
 function showToast(message, type = 'success') {
@@ -290,6 +333,7 @@ function updateRowDisplay(rowIndex) {
 function renderMobile() {
   const fixed = isFixedFarm();
   const day = state.selectedDay;
+  const today = todayIndex();
   const rows = [];
   state.records.forEach((record, index) => {
     if (fixed && (index === 0 || state.records[index - 1].production !== record.production)) {
@@ -309,7 +353,7 @@ function renderMobile() {
       rows.push(`<div class="mobile-summary" data-mobile-production="${record.production}"><span class="mobile-summary-label">TOTAL P${record.production}</span><span class="mobile-summary-projected">0</span><span class="mobile-summary-actual">0</span><span class="mobile-summary-arrangements">0</span></div>`);
     }
   });
-  elements.mobileCapture.innerHTML = `<div class="mobile-days" role="group" aria-label="Día para capturar">${DAYS.map((name, index) => `<button type="button" class="day-${index} ${day === index ? 'active' : ''}" data-select-day="${index}" aria-pressed="${day === index}">${name.slice(0, 3)}</button>`).join('')}</div><div class="mobile-sheet-scroll"><div class="mobile-sheet day-${day}" role="table" aria-label="Planilla de ${DAYS[day]}"><div class="mobile-grid-head" role="row"><span role="columnheader">BLQ</span><span role="columnheader">VARIEDAD</span><span role="columnheader">PROY.</span><span role="columnheader">REAL</span><span role="columnheader">T.PROY.</span><span role="columnheader">T.REAL</span><span role="columnheader">ARREG.</span></div>${rows.join('') || '<p class="mobile-day-note">Aún no hay filas en esta semana.</p>'}<div class="mobile-summary mobile-week-summary"><span class="mobile-summary-label">TOTAL SEMANA</span><span class="mobile-summary-projected">0</span><span class="mobile-summary-actual">0</span><span class="mobile-summary-arrangements">0</span></div></div></div>`;
+  elements.mobileCapture.innerHTML = `<div class="mobile-days" role="group" aria-label="Día para capturar">${DAYS.map((name, index) => `<button type="button" class="${day === index ? 'active' : ''} ${today === index ? 'today' : ''}" data-select-day="${index}" aria-pressed="${day === index}" ${today === index ? 'aria-current="date"' : ''}>${name.slice(0, 3)}</button>`).join('')}</div><div class="mobile-sheet-scroll"><div class="mobile-sheet day-${day}" role="table" aria-label="Planilla de ${DAYS[day]}"><div class="mobile-grid-head" role="row"><span role="columnheader">BLQ</span><span role="columnheader">VARIEDAD</span><span role="columnheader">PROY.</span><span role="columnheader">REAL</span><span role="columnheader">T.PROY.</span><span role="columnheader">T.REAL</span><span role="columnheader">ARREG.</span></div>${rows.join('') || '<p class="mobile-day-note">Aún no hay filas en esta semana.</p>'}<div class="mobile-summary mobile-week-summary"><span class="mobile-summary-label">TOTAL SEMANA</span><span class="mobile-summary-projected">0</span><span class="mobile-summary-actual">0</span><span class="mobile-summary-arrangements">0</span></div></div></div>`;
   renderMobileSummaries();
 }
 
@@ -460,7 +504,7 @@ function renderFieldEditor(kind) {
   const desktopRows = rows.map((row) => `<tr class="${row.computed ? 'calculated-row' : ''}"><th scope="row">${row.label} <small>${row.unit}</small></th>${DAYS.map((_, day) => `<td>${fieldCell(row, day, calculations)}</td>`).join('')}<td class="field-total" data-total="${row.key}">${fieldTotalText(row, calculations)}</td></tr>`).join('');
   const day = state.fieldDay;
   const mobileRows = rows.map((row) => `<div class="field-mobile-row ${row.computed ? 'calculated-row' : ''}"><div><strong>${row.label}</strong><small>${row.unit}</small></div><div>${fieldCell(row, day, calculations)}</div><div class="field-total" data-total="${row.key}">${fieldTotalText(row, calculations)}</div></div>`).join('');
-  editor.innerHTML = `<section class="field-card"><div class="field-card-title">${title}</div>${beds}<div class="field-table-scroll"><table class="field-table"><thead><tr><th scope="col">REGISTRO</th>${DAYS.map((name) => `<th scope="col">${name.toUpperCase()}</th>`).join('')}<th scope="col">${isClimate ? 'PROMEDIO' : 'ACUMULADO'}</th></tr></thead><tbody>${desktopRows}</tbody></table></div><div class="field-mobile"><div class="field-day-tabs" role="group" aria-label="Día del registro">${DAYS.map((name, index) => `<button type="button" data-field-day="${index}" class="day-${index} ${day === index ? 'active' : ''}" aria-pressed="${day === index}">${name.slice(0, 3)}</button>`).join('')}</div><div class="field-mobile-head"><span>REGISTRO</span><span>${DAYS[day].toUpperCase()}</span><span>${isClimate ? 'PROM.' : 'ACUM.'}</span></div>${mobileRows}</div></section>`;
+  editor.innerHTML = `<section class="field-card"><div class="field-card-title">${title}</div>${beds}<div class="field-table-scroll"><table class="field-table"><thead><tr><th scope="col">REGISTRO</th>${DAYS.map((name) => `<th scope="col">${name.toUpperCase()}</th>`).join('')}<th scope="col">${isClimate ? 'PROMEDIO' : 'ACUMULADO'}</th></tr></thead><tbody>${desktopRows}</tbody></table></div><div class="field-mobile"><div class="field-day-tabs" role="group" aria-label="Día del registro">${DAYS.map((name, index) => `<button type="button" data-field-day="${index}" class="${day === index ? 'active' : ''} ${todayIndex() === index ? 'today' : ''}" aria-pressed="${day === index}" ${todayIndex() === index ? 'aria-current="date"' : ''}>${name.slice(0, 3)}</button>`).join('')}</div><div class="field-mobile-head"><span>REGISTRO</span><span>${DAYS[day].toUpperCase()}</span><span>${isClimate ? 'PROM.' : 'ACUM.'}</span></div>${mobileRows}</div></section>`;
 }
 
 function renderFieldEditors() {
@@ -486,10 +530,12 @@ function updateFieldCalculations() {
 
 async function loadFieldData() {
   if (!state.farmId) return;
+  fieldAutosave.reset();
   try {
     const result = await api(`/api/field-data/${state.farmId}/${state.year}/${state.week}`);
     state.fieldData = result.data;
     state.fieldDirty = false;
+    state.fieldDay = todayIndex();
     renderFieldEditors();
     renderSaveState();
   } catch (error) {
@@ -500,28 +546,42 @@ async function loadFieldData() {
   }
 }
 
-async function saveFieldData() {
+const fieldAutosave = createAutosave(async (isCurrent) => {
   if (!window.authApp?.canEdit('production')) return false;
   if (!state.fieldData) return false;
   const invalid = document.querySelector('.field-editor .field-input:invalid');
   if (invalid) { invalid.reportValidity(); return false; }
+  const farmId = state.farmId;
+  const year = state.year;
+  const week = state.week;
+  const payload = JSON.stringify(state.fieldData);
   document.querySelectorAll('.field-save').forEach((button) => { button.disabled = true; button.textContent = 'Guardando…'; });
+  renderSaveState();
   try {
-    const result = await api(`/api/field-data/${state.farmId}/${state.year}/${state.week}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(state.fieldData),
+    const result = await api(`/api/field-data/${farmId}/${year}/${week}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: payload,
     });
-    state.fieldData = result.data;
-    state.fieldDirty = false;
+    if (isCurrent()) {
+      state.fieldData = result.data;
+      state.fieldDirty = false;
+    }
     renderSaveState();
-    renderFieldEditors();
-    showToast(`Registro de ${farmCode().replace('F', 'P')} · semana ${state.week} guardado.`);
     return true;
   } catch (error) { showToast(error.message, 'error'); return false; }
   finally { document.querySelectorAll('.field-save').forEach((button) => { button.disabled = false; button.textContent = '✓ Guardar registro'; }); }
+});
+
+async function saveFieldData() {
+  if (!window.authApp?.canEdit('production') || !state.fieldData) return false;
+  if (!state.fieldDirty) return true;
+  const saved = await fieldAutosave.flush();
+  if (saved) showToast(`Registro de ${farmCode().replace('F', 'P')} · semana ${state.week} guardado.`);
+  return saved;
 }
 
 async function loadWeek() {
   if (!state.farmId) return;
+  projectionAutosave.reset();
   state.loading = true;
   elements.emptyState.classList.remove('visible');
   elements.projectionBody.innerHTML = '<tr><td colspan="20" style="padding:35px;text-align:center;color:#6d776f">Cargando semana…</td></tr>';
@@ -537,6 +597,7 @@ async function loadWeek() {
       arrangements: Number(record.arrangements) || 0,
     }));
     state.fromTemplate = Boolean(data.fromTemplate);
+    state.selectedDay = todayIndex();
     setDirty(false);
   } catch (error) {
     state.records = [];
@@ -548,28 +609,33 @@ async function loadWeek() {
   }
 }
 
-async function saveWeek({ quiet = false } = {}) {
+const projectionAutosave = createAutosave(async (isCurrent) => {
   if (!window.authApp?.canEdit('production')) return false;
   const invalid = state.records.find((record) => !record.block.trim() || !record.variety.trim());
   if (invalid) {
     showToast('Completa bloque y variedad antes de guardar.', 'error');
     return false;
   }
+  const farmId = state.farmId;
+  const year = state.year;
+  const week = state.week;
+  const payload = JSON.stringify({ records: state.records });
   elements.saveButton.disabled = true;
   elements.saveButton.textContent = 'Guardando…';
   elements.saveSheetButton.disabled = true;
   elements.saveSheetButton.textContent = 'Guardando…';
+  renderSaveState();
   try {
-    const data = await api(`/api/projections/${state.farmId}/${state.year}/${state.week}`, {
+    const data = await api(`/api/projections/${farmId}/${year}/${week}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ records: state.records }),
+      body: payload,
     });
-    state.records = data.records;
-    state.fromTemplate = false;
-    setDirty(false);
-    renderRows();
-    if (!quiet) showToast(`Semana ${state.week} guardada correctamente.`);
+    if (isCurrent()) {
+      state.records = data.records;
+      state.fromTemplate = false;
+      setDirty(false);
+    }
     return true;
   } catch (error) {
     showToast(error.message, 'error');
@@ -580,10 +646,19 @@ async function saveWeek({ quiet = false } = {}) {
     elements.saveSheetButton.disabled = false;
     elements.saveSheetButton.textContent = '✓ Guardar';
   }
+});
+
+async function saveWeek({ quiet = false } = {}) {
+  if (!window.authApp?.canEdit('production')) return false;
+  if (state.fromTemplate && !state.dirty) setDirty(true);
+  if (!state.dirty) return true;
+  const saved = await projectionAutosave.flush();
+  if (saved && !quiet) showToast(`Semana ${state.week} guardada correctamente.`);
+  return saved;
 }
 
 async function changeWeek(delta) {
-  if ((state.dirty || state.fieldDirty) && !window.confirm('Hay cambios sin guardar. ¿Deseas cambiar de semana y descartarlos?')) return;
+  if (!(await flushPendingChanges())) return;
   const monday = weekMonday(state.year, state.week);
   monday.setUTCDate(monday.getUTCDate() + (delta * 7));
   const parts = isoWeekParts(new Date(monday.getUTCFullYear(), monday.getUTCMonth(), monday.getUTCDate()));
@@ -592,16 +667,25 @@ async function changeWeek(delta) {
   await Promise.all([loadWeek(), loadFieldData()]);
 }
 
-function showView(name) {
+async function flushPendingChanges() {
+  if (!(await projectionAutosave.flush())) return false;
+  if (!(await fieldAutosave.flush())) return false;
+  if (window.inventoryApp && !(await window.inventoryApp.flush())) return false;
+  return true;
+}
+window.flushPendingChanges = flushPendingChanges;
+
+async function showView(name) {
   if (!window.authApp?.canView(name)) return;
+  if (name === 'history' && !(await flushPendingChanges())) return;
   if (name !== state.activeView) setCaptureExpanded(null, false);
   state.activeView = name;
   for (const [view, element] of Object.entries({ projection: elements.projectionView, temperature: elements.temperatureView, water: elements.waterView, inventory: document.querySelector('#inventoryView'), consultation: document.querySelector('#consultationView'), history: elements.historyView })) {
     element.classList.toggle('active', view === name);
   }
   document.querySelectorAll('[data-view]').forEach((button) => button.classList.toggle('active', button.dataset.view === name));
-  if (name === 'history') loadHistory();
-  if (name === 'inventory') window.inventoryApp?.show();
+  if (name === 'history') await loadHistory();
+  if (name === 'inventory') await window.inventoryApp?.show();
 }
 
 async function loadHistory() {
@@ -732,7 +816,7 @@ elements.historyGrid.addEventListener('click', async (event) => {
   const button = event.target.closest('[data-open-week]');
   if (!button) return;
   const [year, week] = button.dataset.openWeek.split(':').map(Number);
-  if ((state.dirty || state.fieldDirty) && !window.confirm('Hay cambios sin guardar. ¿Deseas abrir otra semana y descartarlos?')) return;
+  if (!(await flushPendingChanges())) return;
   state.year = year;
   state.week = week;
   showView('projection');
@@ -741,7 +825,7 @@ elements.historyGrid.addEventListener('click', async (event) => {
 
 elements.farmSelect.addEventListener('change', async () => {
   const previous = state.farmId;
-  if ((state.dirty || state.fieldDirty || window.inventoryApp?.dirty) && !window.confirm('Hay cambios sin guardar. ¿Deseas cambiar de finca y descartarlos?')) {
+  if (!(await flushPendingChanges())) {
     elements.farmSelect.value = previous;
     return;
   }
@@ -757,7 +841,7 @@ document.querySelector('#previousWeek').addEventListener('click', () => changeWe
 document.querySelector('#nextWeek').addEventListener('click', () => changeWeek(1));
 document.querySelectorAll('[data-week-step]').forEach((button) => button.addEventListener('click', () => changeWeek(Number(button.dataset.weekStep))));
 document.querySelector('#currentWeek').addEventListener('click', async () => {
-  if ((state.dirty || state.fieldDirty) && !window.confirm('Hay cambios sin guardar. ¿Deseas ir a esta semana y descartarlos?')) return;
+  if (!(await flushPendingChanges())) return;
   const current = isoWeekParts();
   state.year = current.year;
   state.week = current.week;
@@ -791,6 +875,7 @@ document.querySelectorAll('.field-editor').forEach((editor) => {
         && other.dataset.day === input.dataset.day) other.value = input.value;
     });
     state.fieldDirty = true;
+    fieldAutosave.mark();
     renderSaveState();
     updateFieldCalculations();
   });
@@ -911,6 +996,22 @@ document.querySelector('#backToProjection').addEventListener('click', () => show
 document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => showView(button.dataset.view)));
 elements.historySearch.addEventListener('input', renderHistory);
 
+let lastToday = todayIndex();
+function refreshTodaySelection() {
+  const current = todayIndex();
+  if (current === lastToday) return;
+  lastToday = current;
+  state.selectedDay = current;
+  state.fieldDay = current;
+  if (state.records.length) renderMobile();
+  if (state.fieldData) renderFieldEditors();
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) void flushPendingChanges();
+  else refreshTodaySelection();
+});
+setInterval(refreshTodaySelection, 60_000);
+
 window.addEventListener('beforeunload', (event) => {
   if (!state.dirty && !state.fieldDirty && !window.inventoryApp?.dirty) return;
   event.preventDefault();
@@ -934,7 +1035,7 @@ async function initialize() {
     document.querySelector('#dbStatusDetail').textContent = health.persistent ? 'PostgreSQL activo' : 'Conecta PostgreSQL';
     document.querySelector('.status-dot').classList.toggle('online', health.persistent);
     if (window.authApp.role !== 'postharvest') await Promise.all([loadWeek(), loadFieldData()]);
-    showView(window.authApp.initialView());
+    await showView(window.authApp.initialView());
   } catch (error) {
     showToast(`No se pudo iniciar: ${error.message}`, 'error');
     elements.projectionBody.innerHTML = `<tr><td colspan="20" style="padding:35px;text-align:center">${escapeHtml(error.message)}</td></tr>`;

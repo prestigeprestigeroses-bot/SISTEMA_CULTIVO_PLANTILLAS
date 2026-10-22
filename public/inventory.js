@@ -170,6 +170,7 @@
 
   async function loadTemplate() {
     if (!model.key) return;
+    autosave.reset();
     const { year, month } = period();
     ui.editor.innerHTML = '<p class="inventory-note">Cargando inventario…</p>';
     try {
@@ -210,33 +211,46 @@
     }
   }
 
-  async function save() {
+  const autosave = window.createAutosave(async (isCurrent) => {
     if (!window.authApp?.canEdit('inventory')) return false;
     if (!model.data || !model.template) return false;
     const bad = ui.editor.querySelector('.inventory-input:invalid');
     if (bad) { bad.reportValidity(); return false; }
     const { year, month } = period();
+    const farmId = model.farmId;
+    const key = model.key;
+    const payload = JSON.stringify(model.data);
     ui.save.disabled = true;
     ui.save.textContent = 'Guardando…';
+    renderSaveState();
     try {
-      const response = await api(`/api/inventory/${model.farmId}/${model.key}/${year}/${month}`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(model.data),
+      const response = await api(`/api/inventory/${farmId}/${key}/${year}/${month}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: payload,
       });
-      model.data = response.data;
-      model.saved = true;
-      model.dirty = false;
+      if (isCurrent()) {
+        model.data = response.data;
+        model.saved = true;
+        model.dirty = false;
+      }
       renderSaveState();
-      showToast(`${model.template.label} guardado.`);
-      await loadFarmSummary();
+      if (isCurrent()) await loadFarmSummary();
       return true;
     } catch (error) { showToast(error.message, 'error'); return false; }
     finally { ui.save.disabled = false; renderMetrics(); }
+  });
+
+  async function save() {
+    if (!window.authApp?.canEdit('inventory') || !model.data) return false;
+    if (!model.dirty) return true;
+    const saved = await autosave.flush();
+    if (saved) showToast(`${model.template.label} guardado.`);
+    return saved;
   }
 
   ui.templates.addEventListener('click', async (event) => {
     const button = event.target.closest('[data-template]');
     if (!button || button.dataset.template === model.key) return;
-    if (model.dirty && !window.confirm('Hay cambios de inventario sin guardar. ¿Deseas descartarlos?')) return;
+    if (!(await autosave.flush())) return;
     model.key = button.dataset.template;
     model.section = 'processed';
     await loadTemplate();
@@ -254,7 +268,7 @@
     if (!/^\d{4}-\d{2}-\d{2}$/.test(nextDate)) { ui.date.value = oldDate; return; }
     const oldMonth = oldDate.slice(0, 7);
     const nextMonth = nextDate.slice(0, 7);
-    if (oldMonth !== nextMonth && model.dirty && !window.confirm('Hay cambios de inventario sin guardar. ¿Deseas descartarlos?')) {
+    if (oldMonth !== nextMonth && !(await autosave.flush())) {
       ui.date.value = oldDate; return;
     }
     model.date = nextDate;
@@ -282,6 +296,7 @@
     else delete model.data[section][key];
     ui.editor.querySelectorAll(`.inventory-input[data-section="${section}"][data-inventory-key="${key}"]`).forEach((other) => { if (other !== target) other.value = target.value; });
     model.dirty = true;
+    autosave.mark();
     renderSaveState();
     updateCalculations();
   });
@@ -297,5 +312,5 @@
   }
   ui.export.addEventListener('click', () => exportInventory(false));
   ui.farmExport.addEventListener('click', () => exportInventory(true));
-  window.inventoryApp = { get dirty() { return model.dirty; }, show: loadFarm, farmChanged: loadFarm };
+  window.inventoryApp = { get dirty() { return model.dirty; }, get saving() { return autosave.saving; }, flush: autosave.flush, show: loadFarm, farmChanged: loadFarm };
 })();

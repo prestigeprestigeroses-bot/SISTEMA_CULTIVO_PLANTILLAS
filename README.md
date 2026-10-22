@@ -9,7 +9,7 @@ Sistema web para registrar la proyección y producción real de flor de dos finc
 - Semana ISO actual automática y navegación entre semanas.
 - Plantillas fijas para Finca P1 y Finca P2, separadas en Producción 1 y Producción 2 en el orden indicado.
 - Bloques y variedades de ambas fincas protegidos contra edición y eliminación, también en el servidor.
-- Vista de captura para celular con filas tipo planilla, selector de día y botón de pantalla completa en proyección, temperatura y registro hídrico (con opción de guardar dentro de la vista). El modo ampliado se ajusta al teclado del teléfono para no cerrarse durante la captura.
+- Vista de captura para celular con filas tipo planilla, selector de día y botón de pantalla completa en proyección, temperatura y registro hídrico. Al abrir una semana se selecciona el día actual; los demás días se muestran grises y hoy se marca en verde. Proyección se distingue en amarillo y Real en verde claro. El modo ampliado se ajusta al teclado del teléfono para no cerrarse durante la captura.
 - Proyección y producción real para lunes a domingo.
 - Totales diarios, por producción y por semana en tiempo real; Total arreglos editable por variedad.
 - Historial de semanas por finca.
@@ -60,11 +60,11 @@ UPDATE farms SET name = 'Nombre finca sur' WHERE code = 'F2';
 
 Los registros se guardan como datos estructurados, no como archivos Excel. Cada Excel se genera bajo demanda a partir de los registros guardados. Los botones de exportación guardan primero los cambios pendientes cuando el acceso permite editar.
 
-Las plantillas de Finca P1 y P2 aparecen automáticamente en las semanas nuevas con cantidades en cero. Se guardan en la base de datos al pulsar **Guardar semana**. Las semanas que ya tienen registros conservan sus cantidades; ambos formatos muestran siempre las filas oficiales en su orden fijo.
+Las plantillas de Finca P1 y P2 aparecen automáticamente en las semanas nuevas con cantidades en cero. Al modificar un dato, se autoguarda aproximadamente un segundo después de dejar de escribir; **Guardar semana** sigue disponible para guardar de inmediato. Las semanas que ya tienen registros conservan sus cantidades; ambos formatos muestran siempre las filas oficiales en su orden fijo.
 
-Los registros de temperatura y agua se guardan con **Guardar registro** en cada sección; comparten los datos de la misma finca y semana. El número de camas aparece precargado en 1.523 para P1 y 1.313 para P2 según las planillas de referencia, pero puede modificarse para cada semana. Los días sin medición se dejan vacíos; un cero ingresado sí cuenta para el promedio.
+Los registros de temperatura y agua también se autoguardan al modificar un dato; **Guardar registro** permite hacerlo de inmediato. Comparten los datos de la misma finca y semana. El número de camas aparece precargado en 1.523 para P1 y 1.313 para P2 según las planillas de referencia, pero puede modificarse para cada semana. Los días sin medición se dejan vacíos; un cero ingresado sí cuenta para el promedio.
 
-En **Poscosecha**, elige la finca, el tipo de inventario y la fecha. La flor procesada se captura para ese día; granel y guarde muestran los días del mes. Los inventarios se guardan por finca, tipo, año y mes en PostgreSQL al pulsar **Guardar inventario**. Las presentaciones sin factor de tallos quedan en «Cantidades sin conversión», sin inventarles un equivalente. En modo demostración, los datos duran hasta reiniciar el servidor.
+En **Poscosecha**, elige la finca, el tipo de inventario y la fecha. La flor procesada se captura para ese día; granel y guarde muestran los días del mes. Los inventarios se autoguardan por finca, tipo, año y mes en PostgreSQL; **Guardar inventario** permite hacerlo de inmediato. Las presentaciones sin factor de tallos quedan en «Cantidades sin conversión», sin inventarles un equivalente. En modo demostración, los datos duran hasta reiniciar el servidor.
 
 En **Flor a granel**, la columna **FN** (fin de corte) aparece después del día 31. Sus cantidades son tallos directos: se suman a **Total tallos** sin multiplicarse por el factor de tallos por ramo ni aumentar **Total ramos**. En celular, FN tiene una sección propia debajo de la captura diaria.
 
