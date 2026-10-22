@@ -344,7 +344,7 @@ h1 { margin: 5px 0 5px; color: var(--forest-950); font-size: clamp(28px, 3vw, 38
 .inventory-table thead .inventory-process-header { color: var(--process-ink); background: var(--process-main); border-bottom: 2px solid var(--process-main); }
 .inventory-table thead .inventory-process-column { background: var(--process-soft); }
 .inventory-table .inventory-process-cell { background: var(--process-cell); }
-.inventory-table thead .inventory-process-column small { margin-top: 3px; color: #17232b; font-size: 11px; font-weight: 800; line-height: 1.2; }
+.inventory-table thead .inventory-process-column small { color: #17232b; }
 .inventory-table .inventory-identity { position: sticky; left: 0; z-index: 2; min-width: 185px; max-width: 185px; padding-left: 10px; background: var(--paper); text-align: left; }
 .inventory-table thead .inventory-identity { z-index: 4; background: var(--leaf-pale); }
 .inventory-table .inventory-freedom { color: #b52d36; }
@@ -536,10 +536,9 @@ body.capture-open .view.active { animation: none; }
   .inventory-mobile-card { display: flex; align-items: center; justify-content: space-between; gap: 5px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--leaf-pale); }
   .inventory-mobile-process { margin-bottom: 9px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 7px; color: var(--process-ink); background: var(--process-main); font-size: 12px; font-weight: 800; }
   .inventory-mobile-card[class*="inventory-process-"] { background: var(--process-cell); border-left: 4px solid var(--process-main); }
-  .inventory-mobile-card > div { min-width: 0; }
   .inventory-mobile-card strong, .inventory-mobile-card span { display: block; }
   .inventory-mobile-card strong { font-size: 13px; }
-  .inventory-mobile-card span { margin-top: 4px; padding: 3px 5px; border: 1px solid #cbd4d1; border-radius: 5px; color: #17232b; background: #fff; font-size: 12px; font-weight: 800; line-height: 1.2; }
+  .inventory-mobile-card span { color: #17232b; font-size: 9px; }
   .inventory-mobile-card input { width: 58px; min-height: 38px; border: 1px solid var(--line); border-radius: 5px; background: #fff; font-size: 16px; text-align: center; }
   .inventory-mobile-total { margin-top: 10px; padding: 11px; border-radius: 7px; color: var(--forest-950); background: var(--field-total-bg); font-size: 12px; }
   .inventory-mobile-head, .inventory-mobile-row { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, .7fr) minmax(0, .7fr); align-items: center; gap: 7px; }
