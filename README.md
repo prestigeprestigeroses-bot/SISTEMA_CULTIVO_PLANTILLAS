@@ -14,13 +14,13 @@ Sistema web para registrar la proyección y producción real de flor de dos finc
 - Totales diarios, por producción y por semana en tiempo real; Total arreglos editable por variedad.
 - Historial de semanas por finca.
 - Secciones de **Temperatura** y **Registro hídrico** por finca y semana, con captura diaria adaptable a celular.
-- Sección de **Poscosecha** con dos inventarios para P1 (inventario propio y flor que amanece de P2) y uno para P2. El inventario propio de P1 y el de P2 incluyen flor procesada, a granel y de guarde; flor que amanece de P2 solo incluye flor a granel.
+- Sección de **Poscosecha** con dos inventarios para P1 (inventario propio y flor que amanece de P2) y uno para P2. El inventario propio de P1 y el de P2 incluyen inventario ramos, flor a granel y de guarde; flor que amanece de P2 solo incluye flor a granel.
 - Tres accesos separados: **Producción** (edita proyección, temperatura y agua), **Poscosecha** (edita inventarios) y **Consulta** (ve todos los registros de P1 y P2 sin modificarlos).
-- Captura por fecha para flor procesada y por mes/día para granel y guarde; totales de ramos y tallos automáticos usando los factores de cada plantilla.
+- Captura por fecha para inventario ramos y por mes/día para granel y guarde; totales de ramos y tallos automáticos usando los factores de cada plantilla.
 - Promedios semanales de temperatura, humedad y precipitación a partir de los días registrados.
 - Consumo de P1 calculado como lectura final menos lectura inicial; consumo de P2 como goteo más cacho. El consumo acumulado en litros por cama usa el consumo m³ × 1000 / número de camas.
 - Exportación `.xlsx` de proyección, temperatura, registro hídrico, cada inventario y total mensual de inventarios por finca.
-- Total mensual de tallos por finca en Poscosecha, sumando flor procesada, granel, guarde y FN de todos los inventarios disponibles para esa finca.
+- Total mensual de tallos por finca en Poscosecha, sumando inventario ramos, granel, guarde y FN de todos los inventarios disponibles para esa finca.
 - Persistencia PostgreSQL y migración automática al iniciar.
 - Modo temporal en memoria cuando no existe `DATABASE_URL`, útil para revisar la interfaz localmente.
 - Configuración de salud y despliegue para Railway.
@@ -64,7 +64,7 @@ Las plantillas de Finca P1 y P2 aparecen automáticamente en las semanas nuevas 
 
 Los registros de temperatura y agua también se autoguardan al modificar un dato; **Guardar registro** permite hacerlo de inmediato. Comparten los datos de la misma finca y semana. El número de camas aparece precargado en 1.523 para P1 y 1.313 para P2 según las planillas de referencia, pero puede modificarse para cada semana. Los días sin medición se dejan vacíos; un cero ingresado sí cuenta para el promedio.
 
-En **Poscosecha**, elige la finca, el tipo de inventario y la fecha. La flor procesada se captura para ese día; granel y guarde muestran los días del mes. Los inventarios se autoguardan por finca, tipo, año y mes en PostgreSQL; **Guardar inventario** permite hacerlo de inmediato. Las presentaciones sin factor de tallos quedan en «Cantidades sin conversión», sin inventarles un equivalente. En modo demostración, los datos duran hasta reiniciar el servidor.
+En **Poscosecha**, elige la finca, el tipo de inventario y la fecha. El inventario ramos se captura para ese día; granel y guarde muestran los días del mes. Los inventarios se autoguardan por finca, tipo, año y mes en PostgreSQL; **Guardar inventario** permite hacerlo de inmediato. Las presentaciones sin factor de tallos quedan en «Cantidades sin conversión», sin inventarles un equivalente. En modo demostración, los datos duran hasta reiniciar el servidor.
 
 En **Flor a granel**, la columna **FN** (fin de corte) aparece después del día 31. Sus cantidades son tallos directos: se suman a **Total tallos** sin multiplicarse por el factor de tallos por ramo ni aumentar **Total ramos**. En celular, FN tiene una sección propia debajo de la captura diaria.
 

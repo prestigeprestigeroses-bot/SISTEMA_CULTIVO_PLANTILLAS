@@ -243,6 +243,18 @@
           "stems": 25
         },
         {
+          "key": "AX",
+          "process": "LÁMINA AZUL",
+          "grade": 50,
+          "stems": 10
+        },
+        {
+          "key": "AY",
+          "process": "LÁMINA AZUL",
+          "grade": 60,
+          "stems": 10
+        },
+        {
           "key": "AL",
           "process": "LÁMINA AZUL",
           "grade": 50,
@@ -264,25 +276,67 @@
           "key": "AO",
           "process": "LÁMINA AMARILLA",
           "grade": 40,
-          "stems": 20
+          "stems": 25
         },
         {
           "key": "AP",
           "process": "LÁMINA AMARILLA",
           "grade": 50,
-          "stems": 20
+          "stems": 25
         },
         {
           "key": "AQ",
           "process": "LÁMINA AMARILLA",
           "grade": 60,
-          "stems": 20
+          "stems": 25
         },
         {
           "key": "AR",
           "process": "LÁMINA AMARILLA",
           "grade": 70,
-          "stems": 20
+          "stems": 25
+        },
+        {
+          "key": "AZ",
+          "process": "LÁMINA MORADA",
+          "grade": 50,
+          "stems": 25
+        },
+        {
+          "key": "BA",
+          "process": "LÁMINA MORADA",
+          "grade": 60,
+          "stems": 25
+        },
+        {
+          "key": "BB",
+          "process": "LÁMINA MORADA",
+          "grade": 70,
+          "stems": 25
+        },
+        {
+          "key": "BC",
+          "process": "LÁMINA MORADA",
+          "grade": 40,
+          "stems": 25
+        },
+        {
+          "key": "BD",
+          "process": "LÁMINA ROJA",
+          "grade": 50,
+          "stems": 25
+        },
+        {
+          "key": "BE",
+          "process": "LÁMINA ROJA",
+          "grade": 40,
+          "stems": 25
+        },
+        {
+          "key": "BF",
+          "process": "LÁMINA ROJA",
+          "grade": 60,
+          "stems": 25
         },
         {
           "key": "AS",

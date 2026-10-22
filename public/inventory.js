@@ -12,7 +12,7 @@
     farmTotal: document.querySelector('#inventoryFarmTotal'),
     farmBreakdown: document.querySelector('#inventoryFarmBreakdown'),
   };
-  const sectionNames = { processed: 'Flor procesada', bulk: 'Flor a granel', guard: 'Flor de guarde' };
+  const sectionNames = { processed: 'Inventario ramos', bulk: 'Flor a granel', guard: 'Flor de guarde' };
   const model = {
     farmId: null, templates: [], key: null, template: null, data: null,
     section: 'processed', date: localDate(), variety: 0, process: null, gridDay: null,

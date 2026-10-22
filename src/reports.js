@@ -3,7 +3,7 @@ const { derivedFieldData } = require('./field-data');
 const { availableSections, inventoryMonthSummary, inventorySummary, normalizeInventory } = require('./inventory');
 
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-const SECTION_NAMES = { processed: 'Flor procesada', bulk: 'Flor a granel', guard: 'Flor de guarde' };
+const SECTION_NAMES = { processed: 'Inventario ramos', bulk: 'Flor a granel', guard: 'Flor de guarde' };
 
 function newWorkbook() {
   const workbook = new ExcelJS.Workbook();

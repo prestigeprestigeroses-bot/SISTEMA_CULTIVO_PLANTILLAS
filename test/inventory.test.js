@@ -8,7 +8,7 @@ test('P1 ofrece dos inventarios, pero flor que amanece de P2 solo tiene granel',
   assert.deepEqual(Object.keys(templates).filter((key) => templates[key].farmCode === 'F2'), ['p2']);
   for (const template of [templates.p1, templates.p2]) {
     assert.ok(template.processed.varieties.length > 0);
-    assert.equal(template.processed.columns.length, 48);
+    assert.equal(template.processed.columns.length, template === templates.p1 ? 57 : 48);
     assert.ok(template.bulk.length > 0);
     assert.ok(template.guard.length > 0);
   }
@@ -19,6 +19,31 @@ test('P1 ofrece dos inventarios, pero flor que amanece de P2 solo tiene granel',
   assert.equal(p1P2.processed, undefined);
   assert.equal(p1P2.guard, undefined);
   assert.throws(() => inventoryTemplate('p2', 'F1'));
+});
+
+test('inventario ramos P1 conserva columnas previas y aplica nuevas láminas y factores', () => {
+  const columns = templates.p1.processed.columns;
+  assert.equal(new Set(columns.map((column) => column.key)).size, columns.length);
+  for (const [key, process, grade, stems] of [
+    ['B', 'LÁMINA PVC', 40, 6],
+    ['C', 'LÁMINA PVC', 40, 12],
+    ['D', 'LÁMINA PVC', 50, 12],
+    ['AX', 'LÁMINA AZUL', 50, 10],
+    ['AY', 'LÁMINA AZUL', 60, 10],
+    ['AZ', 'LÁMINA MORADA', 50, 25],
+    ['BA', 'LÁMINA MORADA', 60, 25],
+    ['BB', 'LÁMINA MORADA', 70, 25],
+    ['BC', 'LÁMINA MORADA', 40, 25],
+    ['BD', 'LÁMINA ROJA', 50, 25],
+    ['BE', 'LÁMINA ROJA', 40, 25],
+    ['BF', 'LÁMINA ROJA', 60, 25],
+  ]) assert.deepEqual(columns.find((column) => column.key === key), { key, process, grade, stems });
+  assert.deepEqual(columns.filter((column) => column.process === 'LÁMINA AMARILLA').map((column) => column.stems), [25, 25, 25, 25]);
+  const data = blankInventory();
+  for (const key of ['B', 'C', 'D', 'AX', 'AY', 'AZ', 'BA', 'BB', 'BC', 'BD', 'BE', 'BF', 'AO', 'AP', 'AQ', 'AR']) data.processed[`21:0:${key}`] = 1;
+  assert.deepEqual(normalizeInventory(templates.p1, 2026, 10, data).processed, data.processed);
+  assert.equal(inventorySummary(templates.p1, data, 'processed', 21).totals.stems, 6 + 12 + 12 + 10 + 10 + 7 * 25 + 4 * 25);
+  assert.equal(templates.p2.processed.columns.length, 48);
 });
 
 test('flor que amanece de P2 guarda solo granel sin borrar datos históricos ocultos', async () => {
