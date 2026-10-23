@@ -70,6 +70,8 @@ const elements = {
   projectionHead: document.querySelector('#projectionHead'),
   projectionBody: document.querySelector('#projectionBody'),
   projectionFoot: document.querySelector('#projectionFoot'),
+  p1ArrangementSummary: document.querySelector('#p1ArrangementSummary'),
+  p1ArrangementGroups: document.querySelector('#p1ArrangementGroups'),
   mobileCapture: document.querySelector('#mobileCapture'),
   captureInputContext: document.querySelector('#captureInputContext'),
   captureInputLabel: document.querySelector('#captureInputLabel'),
@@ -241,6 +243,55 @@ function rowTotals(record) {
   }), { projected: 0, actual: 0 });
 }
 
+function arrangementSummary(record) {
+  const actual = rowTotals(record).actual;
+  const target = record.weeklyTarget;
+  const budget = target === null || target === undefined ? null : Number(target) - actual;
+  return { actual, budget, today: budget === null ? null : Math.round(budget / 51), real: Number(record.arrangements) || 0 };
+}
+
+function summaryNumber(value) { return value === null ? '—' : formatNumber(value); }
+
+function renderP1Summary() {
+  const isP1 = state.farms.find((farm) => Number(farm.id) === state.farmId)?.code === 'F1';
+  elements.p1ArrangementSummary.hidden = !isP1;
+  if (!isP1) { elements.p1ArrangementGroups.innerHTML = ''; return; }
+  elements.p1ArrangementGroups.innerHTML = [1, 2].map((production) => {
+    const rows = state.records.map((record, index) => ({ record, index })).filter(({ record }) => record.production === production);
+    return `<article class="p1-summary-group"><div class="p1-summary-group-heading"><h3>Producción ${production}</h3><strong data-summary-count="${production}"></strong></div>
+      <div class="p1-summary-scroll"><table class="p1-summary-table"><thead><tr><th>Bloque</th><th>Variedad</th><th>Proyección semanal</th><th>Producción total</th><th>Arreglos presupuestados</th><th>Arreglos reales</th><th class="p1-today-heading">Arreglos a hoy</th></tr></thead><tbody>
+      ${rows.map(({ record, index }) => `<tr data-summary-row="${index}"><td data-label="Bloque">${escapeHtml(record.block)}</td><th data-label="Variedad" class="${['FREEDOM', 'DANCING RED'].includes(record.variety) ? 'p1-red-variety' : ''}">${escapeHtml(record.variety)}</th><td data-label="Proyección semanal"><input type="number" min="0" max="1000000" step="1" inputmode="numeric" data-weekly-target="${index}" aria-label="Proyección semanal ${record.variety} bloque ${record.block}" value="${record.weeklyTarget ?? ''}" placeholder="Meta"></td><td data-label="Producción total" data-summary-actual>${formatNumber(arrangementSummary(record).actual)}</td><td data-label="Arreglos presupuestados" data-summary-budget>${summaryNumber(arrangementSummary(record).budget)}</td><td data-label="Arreglos reales" data-summary-real>${formatNumber(record.arrangements)}</td><td data-label="Arreglos a hoy" class="p1-today-cell" data-summary-today>${summaryNumber(arrangementSummary(record).today)}</td></tr>`).join('')}
+      </tbody><tfoot><tr><th colspan="2">TOTAL PRODUCCIÓN ${production}</th><td data-label="Proyección semanal" data-summary-total="${production}:target">0</td><td data-label="Producción total" data-summary-total="${production}:actual">0</td><td data-label="Arreglos presupuestados" data-summary-total="${production}:budget">—</td><td data-label="Arreglos reales" data-summary-total="${production}:real">0</td><td data-label="Arreglos a hoy" class="p1-today-cell" data-summary-total="${production}:today">—</td></tr></tfoot></table></div></article>`;
+  }).join('');
+  updateP1Summary();
+}
+
+function updateP1Summary() {
+  if (elements.p1ArrangementSummary.hidden) return;
+  state.records.forEach((record, index) => {
+    const row = elements.p1ArrangementGroups.querySelector(`[data-summary-row="${index}"]`);
+    if (!row) return;
+    const summary = arrangementSummary(record);
+    for (const key of ['actual', 'budget', 'real', 'today']) row.querySelector(`[data-summary-${key}]`).textContent = summaryNumber(summary[key]);
+    row.classList.toggle('p1-summary-negative', summary.today !== null && summary.today < 0);
+    row.classList.toggle('p1-summary-positive', summary.today !== null && summary.today > 0);
+  });
+  for (const production of [1, 2]) {
+    const records = state.records.filter((record) => record.production === production);
+    const entered = records.filter((record) => record.weeklyTarget !== null && record.weeklyTarget !== undefined);
+    const sums = { target: entered.reduce((sum, record) => sum + Number(record.weeklyTarget), 0),
+      actual: records.reduce((sum, record) => sum + rowTotals(record).actual, 0),
+      budget: entered.reduce((sum, record) => sum + arrangementSummary(record).budget, 0),
+      real: records.reduce((sum, record) => sum + (Number(record.arrangements) || 0), 0) };
+    sums.today = entered.length ? Math.round(sums.budget / 51) : null;
+    for (const key of ['target', 'actual', 'budget', 'real', 'today']) {
+      elements.p1ArrangementGroups.querySelector(`[data-summary-total="${production}:${key}"]`).textContent =
+        summaryNumber((key === 'budget' && !entered.length) ? null : sums[key]);
+    }
+    elements.p1ArrangementGroups.querySelector(`[data-summary-count="${production}"]`).textContent = `${entered.length}/${records.length} metas ingresadas`;
+  }
+}
+
 function renderRows() {
   const locked = isFixedFarm();
   renderHead();
@@ -278,6 +329,7 @@ function renderRows() {
   renderFoot();
   renderMetrics();
   renderMobile();
+  renderP1Summary();
 }
 
 function renderGroupTotals() {
@@ -329,6 +381,7 @@ function updateRowDisplay(rowIndex) {
   renderFoot();
   renderMetrics();
   updateMobileCard(rowIndex);
+  updateP1Summary();
 }
 
 function renderMobile() {
@@ -614,6 +667,7 @@ async function loadWeek() {
         actual: Number(record.days?.[index]?.actual) || 0,
       })),
       arrangements: Number(record.arrangements) || 0,
+      weeklyTarget: record.weeklyTarget == null ? null : Number(record.weeklyTarget),
     }));
     state.fromTemplate = Boolean(data.fromTemplate);
     state.selectedDay = todayIndex();
@@ -647,6 +701,7 @@ async function refreshWeek() {
       actual: Number(record.days?.[index]?.actual) || 0,
     })),
     arrangements: Number(record.arrangements) || 0,
+    weeklyTarget: record.weeklyTarget == null ? null : Number(record.weeklyTarget),
   }));
   if (JSON.stringify(state.records) === JSON.stringify(records) && state.fromTemplate === Boolean(data.fromTemplate)) return;
   const desktopScroll = elements.sheetCard.querySelector('.table-scroll');
@@ -664,6 +719,8 @@ async function refreshWeek() {
 
 const projectionAutosave = createAutosave(async (isCurrent) => {
   if (!window.authApp?.canEdit('production')) return false;
+  const invalidTarget = elements.p1ArrangementGroups.querySelector('input:invalid');
+  if (invalidTarget) { invalidTarget.reportValidity(); return false; }
   const invalid = state.records.find((record) => !record.block.trim() || !record.variety.trim());
   if (invalid) {
     showToast('Completa bloque y variedad antes de guardar.', 'error');
@@ -796,6 +853,7 @@ function addRow(block, variety) {
     variety: variety.trim().toUpperCase(),
     notes: '',
     arrangements: 0,
+    weeklyTarget: null,
     days: blankDays(),
   });
   setDirty(true);
@@ -813,6 +871,15 @@ elements.quickAddForm.addEventListener('submit', (event) => {
   elements.blockInput.focus();
 });
 
+elements.p1ArrangementGroups.addEventListener('input', (event) => {
+  const input = event.target.closest('[data-weekly-target]');
+  if (!input || !window.authApp?.canEdit('production')) return;
+  const index = Number(input.dataset.weeklyTarget);
+  state.records[index].weeklyTarget = input.value === '' ? null : Number(input.value);
+  updateP1Summary();
+  setDirty(true);
+});
+
 elements.projectionBody.addEventListener('input', (event) => {
   const input = event.target.closest('input');
   if (!input) return;
@@ -825,6 +892,7 @@ elements.projectionBody.addEventListener('input', (event) => {
       renderGroupTotals();
       renderFoot();
       updateMobileCard(rowIndex);
+      updateP1Summary();
     }
   } else {
     const day = Number(input.dataset.day);
@@ -854,6 +922,7 @@ elements.mobileCapture.addEventListener('input', (event) => {
     renderGroupTotals();
     renderFoot();
     renderMobileSummaries();
+    updateP1Summary();
   } else {
     state.records[rowIndex].days[Number(input.dataset.day)][input.dataset.kind] = value;
     const desktop = elements.projectionBody.querySelector(`tr[data-row="${rowIndex}"] [data-day="${input.dataset.day}"][data-kind="${input.dataset.kind}"]`);

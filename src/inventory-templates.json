@@ -1024,27 +1024,33 @@
       },
       {
         "name": "MONDIAL",
-        "stemsPerBunch": 20
+        "stemsPerBunch": 20,
+        "retired": true
       },
       {
         "name": "QUEEN BERRY",
-        "stemsPerBunch": 20
+        "stemsPerBunch": 20,
+        "retired": true
       },
       {
         "name": "PINK FLOYD",
-        "stemsPerBunch": 20
+        "stemsPerBunch": 20,
+        "retired": true
       },
       {
         "name": "RUSCUS",
-        "stemsPerBunch": null
+        "stemsPerBunch": null,
+        "retired": true
       },
       {
         "name": "GYSPO",
-        "stemsPerBunch": null
+        "stemsPerBunch": null,
+        "retired": true
       },
       {
         "name": "EUCALIPTO",
-        "stemsPerBunch": null
+        "stemsPerBunch": null,
+        "retired": true
       }
     ],
     "guard": [

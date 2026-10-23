@@ -1,5 +1,5 @@
 const { Pool } = require('pg');
-const { defaultRecordsForFarm, templateRowsForFarm } = require('./defaults');
+const { defaultRecordsForFarm, templateRowsForFarm, P1_ROWS, P1_WEEKLY_TARGETS } = require('./defaults');
 const { blankFieldData, normalizeFieldData } = require('./field-data');
 const { blankInventory, normalizeInventory } = require('./inventory');
 
@@ -50,6 +50,7 @@ async function migrate() {
       production SMALLINT NOT NULL DEFAULT 1,
       template_key VARCHAR(20),
       arrangements INTEGER NOT NULL DEFAULT 0,
+      weekly_target INTEGER CHECK (weekly_target >= 0),
       notes TEXT NOT NULL DEFAULT '',
       display_order INTEGER NOT NULL DEFAULT 0,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -92,6 +93,7 @@ async function migrate() {
     ALTER TABLE weekly_records ADD COLUMN IF NOT EXISTS production SMALLINT NOT NULL DEFAULT 1;
     ALTER TABLE weekly_records ADD COLUMN IF NOT EXISTS template_key VARCHAR(20);
     ALTER TABLE weekly_records ADD COLUMN IF NOT EXISTS arrangements INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE weekly_records ADD COLUMN IF NOT EXISTS weekly_target INTEGER;
   `);
 
   await pool.query(`
@@ -101,6 +103,15 @@ async function migrate() {
   `);
   await pool.query("UPDATE farms SET name = 'Finca P2' WHERE code = 'F2' AND name = 'Finca 2'");
   await pool.query("UPDATE farms SET name = 'Finca P1' WHERE code = 'F1' AND name = 'Finca 1'");
+  // Completa semanas P1 ya guardadas sin reemplazar metas modificadas por el usuario.
+  const targetValues = P1_ROWS.flatMap((row, index) => [row.templateKey, P1_WEEKLY_TARGETS[index]]);
+  const placeholders = P1_ROWS.map((_, index) => `($${index * 2 + 1}::varchar, $${index * 2 + 2}::integer)`).join(', ');
+  await pool.query(`
+    UPDATE weekly_records AS wr SET weekly_target = targets.weekly_target
+    FROM (VALUES ${placeholders}) AS targets(template_key, weekly_target), farms AS f
+    WHERE wr.farm_id = f.id AND f.code = 'F1' AND wr.template_key = targets.template_key
+      AND wr.weekly_target IS NULL
+  `, targetValues);
 }
 
 async function getFarms() {
@@ -188,7 +199,7 @@ async function getWeekWithDefaults(farmId, year, week) {
     if (matchIndex === -1) return row;
     used.add(matchIndex);
     const stored = records[matchIndex];
-    return { ...row, id: stored.id, days: stored.days, arrangements: stored.arrangements };
+    return { ...row, id: stored.id, days: stored.days, arrangements: stored.arrangements, weeklyTarget: stored.weeklyTarget ?? row.weeklyTarget };
   });
   return { records: merged, fromTemplate: used.size < template.length };
 }
@@ -200,7 +211,7 @@ async function getWeek(farmId, year, week) {
 
   const { rows } = await pool.query(`
     SELECT wr.id, wr.block, wr.variety, wr.notes, wr.display_order,
-           wr.production, wr.template_key, wr.arrangements,
+           wr.production, wr.template_key, wr.arrangements, wr.weekly_target,
            dv.day_of_week, dv.projected, dv.actual
     FROM weekly_records wr
     LEFT JOIN daily_values dv ON dv.record_id = wr.id
@@ -219,6 +230,7 @@ async function getWeek(farmId, year, week) {
         production: Number(row.production),
         templateKey: row.template_key,
         arrangements: Number(row.arrangements),
+        weeklyTarget: row.weekly_target === null ? null : Number(row.weekly_target),
         days: Array.from({ length: 7 }, () => ({ projected: 0, actual: 0 })),
       });
     }
@@ -253,6 +265,8 @@ async function replaceWeek({ farmId, year, week, weekStart, records }) {
     production: Number(record.production) || 1,
     templateKey: record.templateKey || null,
     arrangements: Math.max(0, Number.parseInt(record.arrangements, 10) || 0),
+    weeklyTarget: farm.code === 'F1' && record.weeklyTarget !== null && record.weeklyTarget !== undefined && record.weeklyTarget !== ''
+      ? Math.max(0, Number.parseInt(record.weeklyTarget, 10) || 0) : null,
     displayOrder: index,
     days: Array.from({ length: 7 }, (_, dayIndex) => ({
       projected: Math.max(0, Number.parseInt(record.days?.[dayIndex]?.projected, 10) || 0),
@@ -280,11 +294,11 @@ async function replaceWeek({ farmId, year, week, weekStart, records }) {
       const inserted = await client.query(`
         INSERT INTO weekly_records
           (farm_id, week_year, week_number, week_start, block, variety, notes, display_order,
-           production, template_key, arrangements)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+           production, template_key, arrangements, weekly_target)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING id
       `, [farmId, year, week, weekStart, record.block, record.variety, record.notes,
-        record.displayOrder, record.production, record.templateKey, record.arrangements]);
+        record.displayOrder, record.production, record.templateKey, record.arrangements, record.weeklyTarget]);
       const recordId = inserted.rows[0].id;
       for (let day = 0; day < 7; day += 1) {
         await client.query(`

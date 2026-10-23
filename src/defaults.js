@@ -54,6 +54,13 @@ function rowsForGroups(farmCode, groups) {
 }
 
 const P1_ROWS = rowsForGroups('F1', P1_GROUPS);
+// Metas semanales de las dos planillas de resumen P1, en el mismo orden fijo de P1_ROWS.
+const P1_WEEKLY_TARGETS = [
+  1349, 8760, 8754, 7, 9183, 68, 166, 67, 2623, 2855,
+  8754, 8961, 9607, 4961, 764, 1835, 2554, 3142, 3559, 981,
+  4967, 4075, 887, 1923, 1902, 1875, 2226, 1611, 417, 4634,
+];
+const P1_TARGET_BY_KEY = Object.fromEntries(P1_ROWS.map((row, index) => [row.templateKey, P1_WEEKLY_TARGETS[index]]));
 const P2_ROWS = P2_GROUPS.flatMap((group) => group.rows.map(([block, variety], index) => ({
   templateKey: `P${group.production}-${String(index + 1).padStart(2, '0')}`,
   production: group.production,
@@ -67,6 +74,7 @@ function defaultRecordsForFarm(farmCode) {
     id: `template-${row.templateKey}`,
     notes: '',
     arrangements: 0,
+    weeklyTarget: farmCode === 'F1' ? P1_TARGET_BY_KEY[row.templateKey] : null,
     days: Array.from({ length: 7 }, () => ({ projected: 0, actual: 0 })),
   }));
 }
@@ -75,4 +83,4 @@ function templateRowsForFarm(farmCode) {
   return farmCode === 'F1' ? P1_ROWS : farmCode === 'F2' ? P2_ROWS : [];
 }
 
-module.exports = { P1_GROUPS, P1_ROWS, P2_GROUPS, P2_ROWS, templateRowsForFarm, defaultRecordsForFarm };
+module.exports = { P1_GROUPS, P1_ROWS, P1_WEEKLY_TARGETS, P2_GROUPS, P2_ROWS, templateRowsForFarm, defaultRecordsForFarm };

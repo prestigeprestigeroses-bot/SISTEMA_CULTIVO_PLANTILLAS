@@ -96,6 +96,7 @@ function addInventorySection(workbook, farm, period, template, data, section, ye
     for (const [key, value] of Object.entries(data[section] || {})) {
       const [index, day] = key.split(':');
       const item = template[section][Number(index)];
+      if (item.retired) continue;
       sheet.addRow([day === 'FN' ? 'FN' : Number(day), item.name, day === 'FN' ? null : value,
         day === 'FN' ? null : item.stemsPerBunch, day === 'FN' ? value : item.stemsPerBunch === null ? null : value * item.stemsPerBunch]);
     }

@@ -15,6 +15,65 @@ function sumRecord(record, key) {
   return record.days.reduce((sum, day) => sum + Number(day[key] || 0), 0);
 }
 
+function addP1ArrangementSummary(workbook, records) {
+  const sheet = workbook.addWorksheet('Resumen arreglos P1', {
+    views: [{ state: 'frozen', ySplit: 2, xSplit: 2 }],
+    pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
+  });
+  sheet.columns = [{ width: 12 }, { width: 23 }, { width: 20 }, { width: 19 },
+    { width: 25 }, { width: 18 }, { width: 19 }];
+  sheet.mergeCells('A1:G1');
+  sheet.getCell('A1').value = 'RESUMEN GENERAL · ARREGLOS P1';
+  sheet.getCell('A1').font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 16 };
+  sheet.getCell('A1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2B5946' } };
+  sheet.getRow(1).height = 31;
+  sheet.addRow(['BLOQUE', 'VARIEDAD', 'PROYECCIÓN SEMANAL', 'PRODUCCIÓN TOTAL',
+    'ARREGLOS PRESUPUESTADOS', 'ARREGLOS REALES', 'ARREGLOS A HOY']);
+  sheet.getRow(2).height = 35;
+  sheet.getRow(2).eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: 'FF172019' } };
+    cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFB8D34A' } };
+  });
+  for (const production of [1, 2]) {
+    const group = records.filter((record) => record.production === production);
+    sheet.addRow([`PRODUCCIÓN ${production}`]);
+    sheet.mergeCells(sheet.lastRow.number, 1, sheet.lastRow.number, 7);
+    const heading = sheet.lastRow.getCell(1);
+    heading.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    heading.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF567327' } };
+    let targetTotal = 0;
+    let actualTotal = 0;
+    let budgetTotal = 0;
+    let realTotal = 0;
+    let entered = 0;
+    for (const record of group) {
+      const target = record.weeklyTarget == null ? null : Number(record.weeklyTarget);
+      const actual = sumRecord(record, 'actual');
+      const budget = target === null ? null : target - actual;
+      const real = Number(record.arrangements || 0);
+      const row = sheet.addRow([record.block, record.variety, target, actual, budget, real,
+        budget === null ? null : Math.round(budget / 51)]);
+      row.getCell(3).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBF5C8' } };
+      row.getCell(7).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: budget > 0 ? 'FFFDF0C2' : 'FFE8F1E9' } };
+      row.getCell(7).font = { bold: true, color: { argb: budget < 0 ? 'FFB42332' : 'FF24533D' } };
+      if (['FREEDOM', 'DANCING RED'].includes(record.variety)) row.getCell(2).font = { bold: true, color: { argb: 'FFBA2E35' } };
+      if (target !== null) { targetTotal += target; budgetTotal += budget; entered += 1; }
+      actualTotal += actual;
+      realTotal += real;
+    }
+    const totalRow = sheet.addRow([`TOTAL PRODUCCIÓN ${production}`, null, targetTotal, actualTotal,
+      entered ? budgetTotal : null, realTotal, entered ? Math.round(budgetTotal / 51) : null]);
+    sheet.mergeCells(totalRow.number, 1, totalRow.number, 2);
+    totalRow.eachCell({ includeEmpty: true }, (cell) => {
+      cell.font = { bold: true, color: { argb: 'FF274C39' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F1E9' } };
+    });
+    totalRow.getCell(7).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5D36A' } };
+  }
+  return sheet;
+}
+
 async function buildProjectionWorkbook({ farm, year, week, records }) {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'Flor Semanal';
@@ -171,6 +230,8 @@ async function buildProjectionWorkbook({ farm, year, week, records }) {
     addSummary(`TOTAL PRODUCCIÓN ${currentProduction}`, records.slice(groupStart));
   }
   addSummary('TOTAL SEMANA', records);
+
+  if (farm.code === 'F1') addP1ArrangementSummary(workbook, records);
 
   sheet.getColumn(1).width = 12;
   sheet.getColumn(2).width = 22;

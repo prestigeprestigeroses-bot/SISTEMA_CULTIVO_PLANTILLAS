@@ -29,6 +29,8 @@ test('Excel de inventario incluye FN y total de finca', async () => {
   const data = blankInventory();
   data.bulk['0:1'] = 2;
   data.bulk['0:FN'] = 11;
+  data.bulk['23:1'] = 5; // Fila Mondial retirada; se conserva en datos, no en el reporte.
+  data.bulk['24:1'] = 6;
   const buffer = await buildInventoryWorkbook({ farm: p1, template, year: 2026, month: 10, data });
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(buffer);
@@ -36,6 +38,8 @@ test('Excel de inventario incluye FN y total de finca', async () => {
   assert.equal(workbook.getWorksheet('Flor a granel').getCell('A6').value, 'FN');
   assert.equal(workbook.getWorksheet('Flor a granel').getCell('C4').value, 'TABACOS');
   assert.equal(workbook.getWorksheet('Flor a granel').getCell('D4').value, 'TALLOS / TABACO');
+  assert.equal(workbook.getWorksheet('Flor a granel').getCell('A7').value, 'TOTAL MES');
+  assert.equal(workbook.getWorksheet('Flor a granel').getCell('E7').value, 61);
   const total = inventoryMonthSummary(template, data, 2026, 10).stems;
   assert.equal(workbook.getWorksheet('Resumen').getCell('B6').value, total);
   const farm = new ExcelJS.Workbook();

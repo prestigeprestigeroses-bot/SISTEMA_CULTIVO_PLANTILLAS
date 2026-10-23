@@ -76,6 +76,26 @@ test('flor que amanece de P2 guarda solo granel sin borrar datos históricos ocu
   assert.equal(stored.guard['0:1'], 3);
 });
 
+test('flor que amanece de P2 oculta las seis filas finales sin desplazar ni borrar sus registros', async () => {
+  const template = inventoryTemplate('p1_p2', 'F1');
+  assert.deepEqual(template.bulk.slice(23).map(({ name, retired }) => [name, retired]), [
+    ['MONDIAL', true], ['QUEEN BERRY', true], ['PINK FLOYD', true],
+    ['RUSCUS', true], ['GYSPO', true], ['EUCALIPTO', true],
+  ]);
+  assert.equal(template.bulk[10].name, 'MONDIAL');
+  assert.equal(template.bulk[12].name, 'PINK FLOYD');
+  const data = { bulk: { '10:1': 2, '12:1': 3, '22:1': 4, '23:1': 5, '24:1': 6,
+    '25:1': 7, '26:1': 8, '27:1': 9, '28:1': 10, '23:FN': 11 } };
+  const normalized = normalizeInventory(template, 2041, 10, data);
+  assert.deepEqual(normalized.bulk, data.bulk);
+  const total = (2 + 3 + 4) * 20;
+  assert.equal(inventorySummary(template, normalized, 'bulk', 1).totals.stems, total);
+  assert.equal(inventorySummary(template, normalized, 'bulk', 1).totals.fnStems, 0);
+  assert.equal(inventoryMonthSummary(template, normalized, 2041, 10).stems, total);
+  await db.saveInventory(1, 'p1_p2', template, 2041, 10, normalized);
+  assert.deepEqual((await db.getInventory(1, 'p1_p2', 2041, 10)).data.bulk, data.bulk);
+});
+
 test('flor procesada multiplica por los tallos de cada presentación y aparta nacional', () => {
   const template = templates.p1;
   const data = blankInventory();

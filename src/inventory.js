@@ -51,6 +51,8 @@ function normalizeInventory(template, year, month, input) {
 function inventorySummary(template, data, section, selectedDay) {
   const rows = section === 'processed' ? template.processed.varieties : template[section];
   const details = rows.map((item, index) => {
+    // Keep retired positions so saved row keys remain valid, but exclude them from totals.
+    if (item.retired) return { name: item.name, units: 0, stems: 0, unweighted: 0, fnStems: 0 };
     const factors = section === 'processed' ? template.processed.columns : null;
     let units = 0;
     let stems = 0;

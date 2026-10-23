@@ -52,6 +52,7 @@
     const section = model.section;
     const rows = section === 'processed' ? model.template.processed.varieties : model.template[section];
     const details = rows.map((item, row) => {
+      if (item.retired) return { units: 0, stems: 0, unweighted: 0, fnStems: 0 };
       let units = 0; let stems = 0; let unweighted = 0; let fnStems = 0;
       if (section === 'processed') {
         for (const column of model.template.processed.columns) {
@@ -142,15 +143,16 @@
     const unit = 'tabacos';
     const factorUnit = 'tabaco';
     const rows = model.template[section];
+    const visibleRows = rows.map((item, row) => ({ item, row })).filter(({ item }) => !item.retired);
     const days = period().days;
     if (!model.gridDay || model.gridDay > days) model.gridDay = period().day;
     const displayDays = section === 'bulk' ? 31 : days;
     const headers = Array.from({ length: displayDays }, (_, i) => `<th>${i + 1}</th>`).join('');
     const fnHeader = isBulk ? '<th class="inventory-fn-heading" title="Fin de corte: ingresar tallos, no tabacos">FN<small>TALLOS</small></th>' : '';
-    const desktopRows = rows.map((item, row) => `<tr><th class="inventory-identity ${row < 3 ? 'inventory-freedom' : ''}">${escapeHtml(item.name)}<small>${item.stemsPerBunch === null ? 'Sin factor' : `${item.stemsPerBunch} tallos/${factorUnit}`}</small></th>${Array.from({ length: displayDays }, (_, i) => i < days ? `<td>${input(section, row, i + 1, `${item.name} día ${i + 1} ${unit}`)}</td>` : '<td class="inventory-day-unavailable">—</td>').join('')}${isBulk ? `<td class="inventory-fn-cell">${input(section, row, 'FN', `${item.name} FN fin de corte en tallos`)}</td>` : ''}<td class="inventory-total" data-row-units="${row}">${format(result.details[row].units)}</td><td class="inventory-total" data-row-stems="${row}">${format(result.details[row].stems)}</td></tr>`).join('');
-    const dayTotals = Array.from({ length: displayDays }, (_, i) => i < days ? `<td class="inventory-total" data-day-total="${i + 1}">${format(rows.reduce((sum, _, row) => sum + amount(section, row, i + 1), 0))}</td>` : '<td class="inventory-day-unavailable">—</td>').join('');
-    const mobileRows = rows.map((item, row) => `<div class="inventory-mobile-row"><div><strong>${escapeHtml(item.name)}</strong><small>${item.stemsPerBunch === null ? 'Sin factor' : `${item.stemsPerBunch} tallos/${factorUnit}`}</small></div>${input(section, row, model.gridDay, `${item.name} día ${model.gridDay} ${unit}`)}<span data-row-stems="${row}">${format(result.details[row].stems)}</span></div>`).join('');
-    const fnMobile = isBulk ? `<div class="inventory-fn-mobile"><h3>FN · Fin de corte</h3><p>Ingresa tallos directamente. No se multiplican por tallos/${factorUnit}.</p>${rows.map((item, row) => `<div class="inventory-fn-mobile-row"><strong>${escapeHtml(item.name)}</strong>${input(section, row, 'FN', `${item.name} FN fin de corte en tallos`)}</div>`).join('')}</div>` : '';
+    const desktopRows = visibleRows.map(({ item, row }) => `<tr><th class="inventory-identity ${row < 3 ? 'inventory-freedom' : ''}">${escapeHtml(item.name)}<small>${item.stemsPerBunch === null ? 'Sin factor' : `${item.stemsPerBunch} tallos/${factorUnit}`}</small></th>${Array.from({ length: displayDays }, (_, i) => i < days ? `<td>${input(section, row, i + 1, `${item.name} día ${i + 1} ${unit}`)}</td>` : '<td class="inventory-day-unavailable">—</td>').join('')}${isBulk ? `<td class="inventory-fn-cell">${input(section, row, 'FN', `${item.name} FN fin de corte en tallos`)}</td>` : ''}<td class="inventory-total" data-row-units="${row}">${format(result.details[row].units)}</td><td class="inventory-total" data-row-stems="${row}">${format(result.details[row].stems)}</td></tr>`).join('');
+    const dayTotals = Array.from({ length: displayDays }, (_, i) => i < days ? `<td class="inventory-total" data-day-total="${i + 1}">${format(visibleRows.reduce((sum, { row }) => sum + amount(section, row, i + 1), 0))}</td>` : '<td class="inventory-day-unavailable">—</td>').join('');
+    const mobileRows = visibleRows.map(({ item, row }) => `<div class="inventory-mobile-row"><div><strong>${escapeHtml(item.name)}</strong><small>${item.stemsPerBunch === null ? 'Sin factor' : `${item.stemsPerBunch} tallos/${factorUnit}`}</small></div>${input(section, row, model.gridDay, `${item.name} día ${model.gridDay} ${unit}`)}<span data-row-stems="${row}">${format(result.details[row].stems)}</span></div>`).join('');
+    const fnMobile = isBulk ? `<div class="inventory-fn-mobile"><h3>FN · Fin de corte</h3><p>Ingresa tallos directamente. No se multiplican por tallos/${factorUnit}.</p>${visibleRows.map(({ item, row }) => `<div class="inventory-fn-mobile-row"><strong>${escapeHtml(item.name)}</strong>${input(section, row, 'FN', `${item.name} FN fin de corte en tallos`)}</div>`).join('')}</div>` : '';
     return `<div class="inventory-note">Mes de ${new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric' }).format(new Date(period().year, period().month - 1, 1))}. Cada columna diaria registra ${unit}; total tallos = ${unit} × tallos por ${factorUnit}${isBulk ? ' + FN. FN (fin de corte) registra tallos directos.' : '.'}</div>
       <div class="inventory-table-scroll"><table class="inventory-table inventory-grid-table"><thead><tr><th class="inventory-identity">VARIEDAD</th>${headers}${fnHeader}<th>TOTAL ${unit.toUpperCase()}</th><th>TOTAL TALLOS</th></tr></thead><tbody>${desktopRows}</tbody><tfoot><tr><th class="inventory-identity">TOTAL</th>${dayTotals}${isBulk ? `<td class="inventory-total inventory-fn-total" data-all-fn>${format(result.totals.fnStems)}</td>` : ''}<td class="inventory-total" data-all-units>${format(result.totals.units)}</td><td class="inventory-total" data-all-stems>${format(result.totals.stems)}</td></tr></tfoot></table></div>
       <div class="inventory-mobile-capture"><label>Día del mes<select id="inventoryGridDay">${Array.from({ length: days }, (_, i) => `<option value="${i + 1}" ${i + 1 === model.gridDay ? 'selected' : ''}>Día ${i + 1}</option>`).join('')}</select></label><div class="inventory-mobile-head"><span>VARIEDAD</span><span>${unit.toUpperCase()}</span><span>TALLOS MES</span></div>${mobileRows}${fnMobile}</div>`;
@@ -172,7 +174,7 @@
     ui.editor.querySelectorAll('[data-all-units]').forEach((element) => { element.textContent = format(result.totals.units); });
     ui.editor.querySelectorAll('[data-all-fn]').forEach((element) => { element.textContent = format(result.totals.fnStems); });
     ui.editor.querySelectorAll('[data-col-total]').forEach((element) => { element.textContent = format(model.template.processed.varieties.reduce((sum, _, row) => sum + amount('processed', row, element.dataset.colTotal), 0)); });
-    ui.editor.querySelectorAll('[data-day-total]').forEach((element) => { element.textContent = format(model.template[model.section].reduce((sum, _, row) => sum + amount(model.section, row, Number(element.dataset.dayTotal)), 0)); });
+    ui.editor.querySelectorAll('[data-day-total]').forEach((element) => { element.textContent = format(model.template[model.section].reduce((sum, item, row) => sum + (item.retired ? 0 : amount(model.section, row, Number(element.dataset.dayTotal))), 0)); });
   }
 
   async function loadTemplate() {
