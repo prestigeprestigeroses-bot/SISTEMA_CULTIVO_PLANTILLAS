@@ -1163,6 +1163,7 @@
   "p2": {
     "farmCode": "F2",
     "label": "Inventario P2",
+    "sections": ["bulk", "guard"],
     "processed": {
       "varieties": [
         "FREEDOM",
@@ -1667,14 +1668,29 @@
       },
       {
         "name": "FREEDOM RP",
-        "stemsPerBunch": 20
+        "stemsPerBunch": 20,
+        "retired": true
       },
       {
         "name": "MONDIAL RP",
-        "stemsPerBunch": 20
+        "stemsPerBunch": 20,
+        "retired": true
       },
       {
         "name": "EUCALIPTOS",
+        "stemsPerBunch": 20,
+        "retired": true
+      },
+      {
+        "name": "HIGH MAGIC",
+        "stemsPerBunch": 25
+      },
+      {
+        "name": "SWAN",
+        "stemsPerBunch": 20
+      },
+      {
+        "name": "HIGH MAGIC",
         "stemsPerBunch": 20
       }
     ]

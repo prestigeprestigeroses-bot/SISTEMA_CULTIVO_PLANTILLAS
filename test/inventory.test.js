@@ -18,7 +18,47 @@ test('P1 ofrece dos inventarios, pero flor que amanece de P2 solo tiene granel',
   assert.ok(p1P2.bulk.length > 0);
   assert.equal(p1P2.processed, undefined);
   assert.equal(p1P2.guard, undefined);
+  const p2 = inventoryTemplate('p2', 'F2');
+  assert.deepEqual(p2.sections, ['bulk', 'guard']);
+  assert.equal(p2.processed, undefined);
   assert.throws(() => inventoryTemplate('p2', 'F1'));
+});
+
+test('P2 conserva ramos históricos al guardar granel y guarde, pero no los cuenta', async () => {
+  const legacy = { ...templates.p2 };
+  delete legacy.sections;
+  const historical = blankInventory();
+  historical.processed['1:0:B'] = 2;
+  await db.saveInventory(2, 'p2', legacy, 2042, 10, historical);
+  const template = inventoryTemplate('p2', 'F2');
+  const visible = normalizeInventory(template, 2042, 10, (await db.getInventory(2, 'p2', 2042, 10)).data);
+  assert.deepEqual(Object.keys(visible), ['bulk', 'guard']);
+  visible.bulk['0:1'] = 3;
+  visible.guard['0:1'] = 4;
+  await db.saveInventory(2, 'p2', template, 2042, 10, visible);
+  const stored = (await db.getInventory(2, 'p2', 2042, 10)).data;
+  assert.equal(stored.processed['1:0:B'], 2);
+  assert.equal(stored.bulk['0:1'], 3);
+  assert.equal(stored.guard['0:1'], 4);
+  assert.deepEqual(Object.keys(inventoryMonthSummary(template, stored, 2042, 10).sections), ['bulk', 'guard']);
+});
+
+test('flor de guarde P2 muestra las mismas variedades y factores de granel sin mezclar registros', () => {
+  const template = inventoryTemplate('p2', 'F2');
+  const visibleGuard = template.guard.filter((row) => !row.retired);
+  assert.deepEqual(visibleGuard, template.bulk);
+  assert.deepEqual(template.guard.slice(21, 24).map((row) => [row.name, row.retired]),
+    [['FREEDOM RP', true], ['MONDIAL RP', true], ['EUCALIPTOS', true]]);
+  const data = blankInventory();
+  data.bulk['21:1'] = 2;
+  data.guard['21:1'] = 3; // Registro histórico que no debe cambiar a HIGH MAGIC.
+  data.guard['24:1'] = 4;
+  data.guard['25:1'] = 5;
+  data.guard['26:1'] = 6;
+  const normalized = normalizeInventory(template, 2026, 10, data);
+  assert.equal(normalized.guard['21:1'], 3);
+  assert.equal(inventorySummary(template, normalized, 'guard', 1).totals.stems, 4 * 25 + 5 * 20 + 6 * 20);
+  assert.equal(inventorySummary(template, normalized, 'bulk', 1).totals.stems, 2 * 25);
 });
 
 test('inventario ramos P1 conserva columnas previas y aplica nuevas láminas y factores', () => {
@@ -154,17 +194,19 @@ test('total mensual de tallos suma secciones y respeta inventario solo granel', 
 });
 
 test('valida finca, mes, día, variedad y columna antes de guardar', async () => {
-  const template = templates.p2;
-  assert.throws(() => normalizeInventory(template, 2026, 2, { processed: { '30:0:B': 1 } }));
-  assert.throws(() => normalizeInventory(template, 2026, 10, { processed: { '1:0:ZZ': 1 } }));
+  const template = inventoryTemplate('p2', 'F2');
+  const legacyTemplate = { ...templates.p2 };
+  delete legacyTemplate.sections;
+  assert.throws(() => normalizeInventory(legacyTemplate, 2026, 2, { processed: { '30:0:B': 1 } }));
+  assert.throws(() => normalizeInventory(legacyTemplate, 2026, 10, { processed: { '1:0:ZZ': 1 } }));
   assert.throws(() => normalizeInventory(template, 2026, 10, { bulk: { '999:1': 1 } }));
   assert.throws(() => normalizeInventory(template, 2026, 10, { guard: { '0:FN': 1 } }));
   assert.throws(() => normalizeInventory(template, 2026, 10, { bulk: { '0:FN': -1 } }));
   const data = blankInventory();
-  data.processed['21:0:B'] = 2;
+  data.bulk['0:21'] = 2;
   await db.saveInventory(2, 'p2', template, 2035, 10, data);
   const saved = await db.getInventory(2, 'p2', 2035, 10);
   assert.equal(saved.saved, true);
-  assert.equal(saved.data.processed['21:0:B'], 2);
+  assert.equal(saved.data.bulk['0:21'], 2);
   assert.equal((await db.getInventory(1, 'p1', 2035, 10)).saved, false);
 });

@@ -57,3 +57,19 @@ test('Excel P1 distingue grado y tabacos en granel y guarde', async () => {
   assert.equal(workbook.getWorksheet('Flor de guarde').getCell('C4').value, 'TABACOS');
   assert.equal(workbook.getWorksheet('Flor de guarde').getCell('D4').value, 'TALLOS / TABACO');
 });
+
+test('Excel de guarde P2 usa la nueva lista sin exportar variedades retiradas', async () => {
+  const template = inventoryTemplate('p2', 'F2');
+  const data = blankInventory();
+  data.guard['21:1'] = 3;
+  data.guard['24:1'] = 4;
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(await buildInventoryWorkbook({ farm: { id: 2, code: 'F2', name: 'Finca P2' },
+    template, year: 2026, month: 10, data }));
+  const names = [];
+  workbook.getWorksheet('Flor de guarde').eachRow((row) => names.push(row.getCell(2).value));
+  assert.deepEqual(workbook.worksheets.map((sheet) => sheet.name), ['Resumen', 'Flor a granel', 'Flor de guarde']);
+  assert.ok(names.includes('HIGH MAGIC'));
+  assert.ok(!names.includes('FREEDOM RP'));
+  assert.equal(inventoryMonthSummary(template, data, 2026, 10).sections.guard.stems, 100);
+});
