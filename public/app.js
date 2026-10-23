@@ -269,7 +269,7 @@ function renderRows() {
         ${locked ? '' : `<td><button class="delete-row" data-action="delete" title="Eliminar fila" aria-label="Eliminar fila ${rowIndex + 1}">×</button></td>`}
       </tr>`);
     if (locked && (rowIndex === state.records.length - 1 || state.records[rowIndex + 1].production !== record.production)) {
-      html.push(`<tr class="production-total" data-production="${record.production}"><td colspan="2">TOTAL PRODUCCIÓN ${record.production}</td>${Array.from({ length: 17 }, (_, index) => `<td class="${index === 14 ? 'total-projected' : index === 15 ? 'total-real' : ''}">0</td>`).join('')}</tr>`);
+      html.push(`<tr class="production-total" data-production="${record.production}"><td colspan="2">TOTAL PRODUCCIÓN ${record.production}</td>${Array.from({ length: 17 }, (_, index) => `<td class="${index === 14 ? 'total-projected' : index === 15 ? 'total-real' : index === 16 ? 'arrangements-total' : ''}">0</td>`).join('')}</tr>`);
     }
   });
   elements.projectionBody.innerHTML = html.join('');
@@ -313,7 +313,7 @@ function renderFoot() {
       ${summary.days.map((day) => `<td>${formatNumber(day.projected)}</td><td>${formatNumber(day.actual)}</td>`).join('')}
       <td class="total-projected">${formatNumber(summary.projected)}</td>
       <td class="total-real">${formatNumber(summary.actual)}</td>
-      <td>${formatNumber(arrangements)}</td>
+      <td class="arrangements-total">${formatNumber(arrangements)}</td>
       ${isFixedFarm() ? '' : '<td></td>'}
     </tr>`;
 }

@@ -15,6 +15,10 @@
   --day-strong: #e7e9e7;
   --day-projection: #fff0a6;
   --day-real: #dff3d9;
+  --arrangements-header: #285f9b;
+  --arrangements-cell: #dcecff;
+  --arrangements-total: #bad9fb;
+  --arrangements-ink: #153e69;
   --danger: #b54c42;
   --shadow: 0 18px 45px rgba(28, 52, 39, .08);
   --sidebar-glow: rgba(169, 201, 80, .17);
@@ -212,7 +216,7 @@ h1 { margin: 5px 0 5px; color: var(--forest-950); font-size: clamp(28px, 3vw, 38
 .projection-table th.projection-sub { color: #263328; background: var(--day-projection); }
 .projection-table th.actual-sub { color: #52635a; background: var(--day-real); }
 .projection-table th.total-head { min-width: 85px; color: #fff; background: var(--forest-800); }
-.projection-table th.arrangements-head { min-width: 100px; background: #665184; }
+.projection-table th.arrangements-head { min-width: 100px; background: var(--arrangements-header); }
 .projection-table td.identity-cell { position: sticky; left: 0; z-index: 1; width: 76px; min-width: 76px; background: #fff; }
 .projection-table td.variety-cell { position: sticky; left: 76px; z-index: 1; min-width: 145px; background: #fff; box-shadow: 5px 0 9px rgba(30,48,37,.04); }
 .projection-table input { width: 100%; min-width: 62px; height: 39px; padding: 0 8px; border: 0; outline: none; color: var(--ink); background: transparent; font-size: 12px; }
@@ -224,7 +228,8 @@ h1 { margin: 5px 0 5px; color: var(--forest-950); font-size: clamp(28px, 3vw, 38
 .projection-table th.total-head.total-real { color: #483500; background: #f5d36a; }
 .projection-table td.total-projected, .projection-table .production-total td.total-projected, .projection-table tfoot td.total-projected { color: #4a2435; background: #f9dbe8; }
 .projection-table td.total-real, .projection-table .production-total td.total-real, .projection-table tfoot td.total-real { color: #483500; background: #ffeda6; }
-.projection-table td.arrangements-cell { min-width: 100px; background: #f1eaf7; }
+.projection-table td.arrangements-cell { min-width: 100px; background: var(--arrangements-cell); }
+.projection-table .production-total td.arrangements-total, .projection-table tfoot td.arrangements-total { color: var(--arrangements-ink); background: var(--arrangements-total); }
 .arrangements-cell input { text-align: right; font-weight: 700; }
 .fixed-identity, .fixed-variety { display: block; padding: 11px 9px; min-height: 39px; font-size: 12px; font-weight: 700; }
 .projection-table td.freedom-cell { background: #fff; }
@@ -451,7 +456,8 @@ body.capture-open .view.active { animation: none; }
   .mobile-grid-head span:nth-child(4) { background: var(--day-real); }
   .mobile-grid-head span:nth-child(5), .mobile-record .mobile-total-projected { background: #f9dbe8; color: #4a2435; }
   .mobile-grid-head span:nth-child(6), .mobile-record .mobile-total-real { background: #ffeda6; color: #483500; }
-  .mobile-grid-head span:nth-child(7), .mobile-arrangements { background: #f1eaf7; }
+  .mobile-grid-head span:nth-child(7) { color: #fff; background: var(--arrangements-header); }
+  .mobile-arrangements { background: var(--arrangements-cell); }
   .mobile-production { padding: 7px 9px; color: #fff; background: var(--forest-800); font-size: 11px; font-weight: 800; }
   .mobile-record { min-height: 43px; border-bottom: 1px solid #dfe6df; background: #fff; }
   .mobile-record > * { display: flex; align-items: center; min-width: 0; padding: 2px; border-right: 1px solid #e1e6e1; }
@@ -469,6 +475,7 @@ body.capture-open .view.active { animation: none; }
   .mobile-summary-projected, .mobile-summary-actual, .mobile-summary-arrangements { padding-right: 3px; text-align: right; overflow: hidden; }
   .mobile-summary-projected { background: #f9dbe8; }
   .mobile-summary-actual { background: #ffeda6; }
+  .mobile-summary-arrangements { color: var(--arrangements-ink); background: var(--arrangements-total); }
   .mobile-week-summary { position: sticky; bottom: 0; color: #fff; background: var(--forest-800); }
   .mobile-week-summary .mobile-summary-projected { color: #4a2435; }
   .mobile-week-summary .mobile-summary-actual { color: #483500; }
