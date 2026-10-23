@@ -51,6 +51,7 @@ function createAutosave(persist, delay = 1000) {
     flush,
     reset() { clearTimeout(timer); timer = null; revision = 0; savedRevision = 0; },
     get saving() { return Boolean(pending); },
+    get revision() { return revision; },
   };
 }
 window.createAutosave = createAutosave;
@@ -546,6 +547,24 @@ async function loadFieldData() {
   }
 }
 
+function fieldInputFocused() {
+  const active = document.activeElement;
+  return active instanceof HTMLInputElement &&
+    (elements.temperatureEditor.contains(active) || elements.waterEditor.contains(active));
+}
+
+async function refreshFieldData() {
+  if (!state.farmId || !state.fieldData || state.fieldDirty || fieldAutosave.saving || fieldInputFocused()) return;
+  const { farmId, year, week } = state;
+  const revision = fieldAutosave.revision;
+  const result = await api(`/api/field-data/${farmId}/${year}/${week}`, { cache: 'no-store' });
+  if (farmId !== state.farmId || year !== state.year || week !== state.week ||
+    revision !== fieldAutosave.revision || state.fieldDirty || fieldAutosave.saving || fieldInputFocused()) return;
+  if (JSON.stringify(state.fieldData) === JSON.stringify(result.data)) return;
+  state.fieldData = result.data;
+  renderFieldEditors();
+}
+
 const fieldAutosave = createAutosave(async (isCurrent) => {
   if (!window.authApp?.canEdit('production')) return false;
   if (!state.fieldData) return false;
@@ -607,6 +626,40 @@ async function loadWeek() {
     state.loading = false;
     renderRows();
   }
+}
+
+function projectionInputFocused() {
+  const active = document.activeElement;
+  return active instanceof HTMLInputElement && elements.projectionView.contains(active);
+}
+
+async function refreshWeek() {
+  if (!state.farmId || state.loading || state.dirty || projectionAutosave.saving || projectionInputFocused()) return;
+  const { farmId, year, week } = state;
+  const revision = projectionAutosave.revision;
+  const data = await api(`/api/projections/${farmId}/${year}/${week}`, { cache: 'no-store' });
+  if (farmId !== state.farmId || year !== state.year || week !== state.week || state.loading ||
+    revision !== projectionAutosave.revision || state.dirty || projectionAutosave.saving || projectionInputFocused()) return;
+  const records = data.records.map((record) => ({
+    ...record,
+    days: Array.from({ length: 7 }, (_, index) => ({
+      projected: Number(record.days?.[index]?.projected) || 0,
+      actual: Number(record.days?.[index]?.actual) || 0,
+    })),
+    arrangements: Number(record.arrangements) || 0,
+  }));
+  if (JSON.stringify(state.records) === JSON.stringify(records) && state.fromTemplate === Boolean(data.fromTemplate)) return;
+  const desktopScroll = elements.sheetCard.querySelector('.table-scroll');
+  const mobileScroll = elements.mobileCapture.querySelector('.mobile-sheet-scroll');
+  const desktopPosition = { top: desktopScroll.scrollTop, left: desktopScroll.scrollLeft };
+  const mobilePosition = mobileScroll && { top: mobileScroll.scrollTop, left: mobileScroll.scrollLeft };
+  state.records = records;
+  state.fromTemplate = Boolean(data.fromTemplate);
+  renderRows();
+  desktopScroll.scrollTo(desktopPosition.left, desktopPosition.top);
+  const nextMobileScroll = elements.mobileCapture.querySelector('.mobile-sheet-scroll');
+  if (mobilePosition && nextMobileScroll) nextMobileScroll.scrollTo(mobilePosition.left, mobilePosition.top);
+  renderSaveState();
 }
 
 const projectionAutosave = createAutosave(async (isCurrent) => {
@@ -696,6 +749,16 @@ async function loadHistory() {
   } catch (error) {
     elements.historyGrid.innerHTML = `<div class="history-empty">${escapeHtml(error.message)}</div>`;
   }
+}
+
+async function refreshHistory() {
+  const farmId = state.farmId;
+  if (!farmId) return;
+  const history = await api(`/api/history/${farmId}`, { cache: 'no-store' });
+  if (farmId !== state.farmId || state.activeView !== 'history' ||
+    JSON.stringify(state.history) === JSON.stringify(history)) return;
+  state.history = history;
+  renderHistory();
 }
 
 function renderHistory() {
@@ -1014,9 +1077,23 @@ function refreshTodaySelection() {
 }
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) void flushPendingChanges();
-  else refreshTodaySelection();
+  else { refreshTodaySelection(); void refreshLiveData(); }
 });
 setInterval(refreshTodaySelection, 60_000);
+
+let liveRefreshInFlight = false;
+async function refreshLiveData() {
+  if (liveRefreshInFlight || document.hidden || !state.farmId || !window.authApp?.role) return;
+  liveRefreshInFlight = true;
+  try {
+    const tasks = [];
+    if (window.authApp.canView('projection')) tasks.push(refreshWeek(), refreshFieldData());
+    if (state.activeView === 'inventory') tasks.push(window.inventoryApp?.refresh());
+    if (state.activeView === 'history') tasks.push(refreshHistory());
+    await Promise.allSettled(tasks);
+  } finally { liveRefreshInFlight = false; }
+}
+setInterval(() => { void refreshLiveData(); }, 15_000);
 
 window.addEventListener('beforeunload', (event) => {
   if (!state.dirty && !state.fieldDirty && !window.inventoryApp?.dirty) return;

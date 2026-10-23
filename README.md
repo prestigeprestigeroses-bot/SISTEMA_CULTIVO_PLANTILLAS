@@ -13,6 +13,7 @@ Sistema web para registrar la proyección y producción real de flor de dos finc
 - Proyección y producción real para lunes a domingo.
 - Totales diarios, por producción y por semana en tiempo real; Total arreglos editable por variedad.
 - Historial de semanas por finca.
+- Las vistas abiertas de producción, temperatura, agua, inventarios, historial y consulta comprueban cambios del servidor cada 15 segundos sin recargar la página; la captura activa y los cambios pendientes de autoguardado no se reemplazan.
 - Secciones de **Temperatura** y **Registro hídrico** por finca y semana, con captura diaria adaptable a celular.
 - Sección de **Poscosecha** con dos inventarios para P1 (inventario propio y flor que amanece de P2) y uno para P2. El inventario propio de P1 y el de P2 incluyen inventario ramos, flor a granel y de guarde; flor que amanece de P2 solo incluye flor a granel.
 - Tres accesos separados: **Producción** (edita proyección, temperatura y agua), **Poscosecha** (edita inventarios) y **Consulta** (ve todos los registros de P1 y P2 sin modificarlos).

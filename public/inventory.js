@@ -96,11 +96,14 @@
   async function loadFarmSummary() {
     if (!model.farmId) return;
     const { year, month } = period();
+    const farmId = model.farmId;
     try {
-      const result = await api(`/api/inventory/summary/${model.farmId}/${year}/${month}`);
+      const result = await api(`/api/inventory/summary/${farmId}/${year}/${month}`, { cache: 'no-store' });
+      if (farmId !== model.farmId || year !== period().year || month !== period().month) return;
       ui.farmTotal.textContent = format(result.totalStems);
       ui.farmBreakdown.textContent = result.inventories.map((item) => `${item.label}: ${format(item.summary.stems)}`).join(' · ');
     } catch (error) {
+      if (farmId !== model.farmId || year !== period().year || month !== period().month) return;
       ui.farmTotal.textContent = '—';
       ui.farmBreakdown.textContent = error.message;
     }
@@ -243,6 +246,39 @@
     finally { ui.save.disabled = false; renderMetrics(); }
   });
 
+  function inventoryInputFocused() {
+    const active = document.activeElement;
+    return ui.view.contains(active) && active?.matches('input, select, textarea');
+  }
+
+  async function refresh() {
+    if (!model.farmId || !model.key || !model.data || model.dirty || autosave.saving || inventoryInputFocused()) return;
+    const farmId = model.farmId;
+    const key = model.key;
+    const { year, month } = period();
+    const revision = autosave.revision;
+    const response = await api(`/api/inventory/${farmId}/${key}/${year}/${month}`, { cache: 'no-store' });
+    if (farmId !== model.farmId || key !== model.key || year !== period().year || month !== period().month ||
+      revision !== autosave.revision || model.dirty || autosave.saving || inventoryInputFocused()) return;
+    if (JSON.stringify(model.data) !== JSON.stringify(response.data) ||
+      JSON.stringify(model.template) !== JSON.stringify(response.template) || model.saved !== response.saved) {
+      const scrollTop = ui.editor.scrollTop;
+      const table = ui.editor.querySelector('.inventory-table-scroll');
+      const tablePosition = table && { top: table.scrollTop, left: table.scrollLeft };
+      model.template = response.template;
+      model.data = response.data;
+      model.saved = response.saved;
+      if (model.template.sections && !model.template.sections.includes(model.section)) model.section = model.template.sections[0];
+      model.variety = Math.min(model.variety, Math.max(0, (model.template.processed?.varieties.length || 1) - 1));
+      renderTabs();
+      renderEditor();
+      ui.editor.scrollTop = scrollTop;
+      const nextTable = ui.editor.querySelector('.inventory-table-scroll');
+      if (tablePosition && nextTable) nextTable.scrollTo(tablePosition.left, tablePosition.top);
+    }
+    await loadFarmSummary();
+  }
+
   async function save() {
     if (!window.authApp?.canEdit('inventory') || !model.data) return false;
     if (!model.dirty) return true;
@@ -316,5 +352,5 @@
   }
   ui.export.addEventListener('click', () => exportInventory(false));
   ui.farmExport.addEventListener('click', () => exportInventory(true));
-  window.inventoryApp = { get dirty() { return model.dirty; }, get saving() { return autosave.saving; }, flush: autosave.flush, show: loadFarm, farmChanged: loadFarm };
+  window.inventoryApp = { get dirty() { return model.dirty; }, get saving() { return autosave.saving; }, flush: autosave.flush, show: loadFarm, farmChanged: loadFarm, refresh };
 })();
