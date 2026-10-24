@@ -37,7 +37,7 @@ Abrir `http://localhost:3000`. Sin una base configurada, los datos duran hasta q
 
 Para persistencia local, crear `.env` a partir de `.env.example` y colocar la URL de una base PostgreSQL.
 
-El acceso requiere `AUTH_PRODUCTION_PASSWORD`, `AUTH_POSCOSECHA_PASSWORD`, `AUTH_VIEWER_PASSWORD` y `SESSION_SECRET` en `.env`. Las tres contraseñas deben ser distintas y tener al menos 12 caracteres; `SESSION_SECRET` debe tener al menos 32 caracteres aleatorios. El archivo `.env` está excluido de Git. Para compartir la consulta, entrega a esas personas la URL desplegada, el tipo de acceso **Consulta** y solo su contraseña. La contraseña de Consulta es compartida: para retirar el acceso de alguien, cámbiala y distribuye la nueva a quienes deban conservarlo.
+El acceso requiere `AUTH_PRODUCTION_PASSWORD`, `AUTH_POSCOSECHA_PASSWORD`, `AUTH_VIEWER_PASSWORD` y `SESSION_SECRET` en `.env`. Las tres contraseñas deben ser distintas y tener al menos 5 caracteres; pueden ser más largas. Una contraseña de 5 caracteres es fácil de adivinar, especialmente si se comparte la página: usa valores no obvios y cámbialos si se divulgan. `SESSION_SECRET` es una clave interna distinta y debe conservar al menos 32 caracteres aleatorios. El archivo `.env` está excluido de Git. Para compartir la consulta, entrega a esas personas la URL desplegada, el tipo de acceso **Consulta** y solo su contraseña. La contraseña de Consulta es compartida: para retirar el acceso de alguien, cámbiala y distribuye la nueva a quienes deban conservarlo.
 
 ## Desplegar en Railway
 

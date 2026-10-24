@@ -12,9 +12,11 @@ function createAuth(config) {
     viewer: config.viewerPassword,
   };
   const localTestMode = config.allowInsecureLocal === true && config.secure !== true;
-  if (Object.values(passwords).some((password) => typeof password !== 'string' || password.length < (localTestMode ? 1 : 12))
-    || (!localTestMode && new Set(Object.values(passwords)).size !== ROLES.length)) {
-    throw new Error('Configura tres contraseñas distintas de al menos 12 caracteres');
+  if (Object.values(passwords).some((password) => typeof password !== 'string' || password.length < 5)) {
+    throw new Error('Configura las tres contraseñas con al menos 5 caracteres');
+  }
+  if (!localTestMode && new Set(Object.values(passwords)).size !== ROLES.length) {
+    throw new Error('Configura tres contraseñas distintas');
   }
   if (typeof config.sessionSecret !== 'string' || config.sessionSecret.length < 32) {
     throw new Error('Configura SESSION_SECRET con al menos 32 caracteres aleatorios');

@@ -10,8 +10,11 @@ const config = {
   secure: true,
 };
 
-test('requiere contraseñas fuertes, diferentes y clave de sesión', () => {
-  assert.throws(() => createAuth({ ...config, viewerPassword: 'short' }));
+test('acepta cinco caracteres, rechaza menos de cinco y conserva claves distintas y sesión larga', () => {
+  const shortPasswords = { ...config, productionPassword: 'PROD1', postharvestPassword: 'POSC2', viewerPassword: 'LEER3' };
+  const auth = createAuth(shortPasswords);
+  assert.equal(auth.roleFromToken(auth.token('viewer')), 'viewer');
+  assert.throws(() => createAuth({ ...config, viewerPassword: 'abcd' }), /al menos 5 caracteres/);
   assert.throws(() => createAuth({ ...config, viewerPassword: config.productionPassword }));
   assert.throws(() => createAuth({ ...config, sessionSecret: 'short' }));
 });
@@ -24,6 +27,7 @@ test('permite 12345 en los tres perfiles solo para pruebas locales', () => {
   }
   assert.throws(() => createAuth({ ...local, secure: true }));
   assert.throws(() => createAuth({ ...local, allowInsecureLocal: false }));
+  assert.throws(() => createAuth({ ...local, viewerPassword: '1234' }));
 });
 
 test('sesiones firmadas distinguen los tres perfiles y caducan', () => {
