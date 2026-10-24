@@ -138,10 +138,16 @@
     const totals = columns.map((column) => `<td class="inventory-total" data-col-total="${column.key}">${format(varieties.reduce((sum, _, row) => sum + amount('processed', row, column.key), 0))}</td>`).join('');
     const current = model.variety;
     const mobileColumns = columns.filter((column) => column.process === model.process);
+    const mobileCards = mobileColumns.map((column, index) => {
+      const heading = index === 0 || column.stems !== mobileColumns[index - 1].stems
+        ? `<h3 class="inventory-mobile-factor">${column.stems === null ? 'Sin factor de tallos' : `×${column.stems} tallos`}</h3>`
+        : '';
+      return `${heading}<div class="inventory-mobile-card ${processClass(column.process)}"><strong>${gradeLabel(column.grade)}</strong>${input('processed', current, column.key, `${varieties[current]} ${column.process} grado ${column.grade}`)}</div>`;
+    }).join('');
     const mobile = `<div class="inventory-mobile-capture"><label>Variedad<select id="inventoryVariety">${varieties.map((name, index) => `<option value="${index}" ${index === current ? 'selected' : ''}>${escapeHtml(name)}</option>`).join('')}</select></label>
       <label>Proceso<select id="inventoryProcess">${groups.map((name) => `<option value="${escapeHtml(name)}" ${name === model.process ? 'selected' : ''}>${escapeHtml(name)}</option>`).join('')}</select></label>
       <div class="inventory-mobile-process ${processClass(model.process)}">${escapeHtml(model.process)}</div>
-      <div class="inventory-mobile-grid">${mobileColumns.map((column) => `<div class="inventory-mobile-card ${processClass(column.process)}"><div><strong>${gradeLabel(column.grade)}</strong><span>${column.stems === null ? 'Sin factor de tallos' : `${column.stems} tallos por unidad`}</span></div>${input('processed', current, column.key, `${varieties[current]} ${column.process} grado ${column.grade}`)}</div>`).join('')}</div>
+      <div class="inventory-mobile-grid">${mobileCards}</div>
       <div class="inventory-mobile-total">${escapeHtml(varieties[current])}: <strong data-row-stems="${current}">${format(result.details[current].stems)}</strong> tallos</div></div>`;
     return `<div class="inventory-note">Captura del día ${period().day}. Las presentaciones se muestran por cantidad de tallos (de mayor a menor); las casillas y sus registros se conservan. “Nacional” y “NAL” quedan aparte porque no tienen factor.</div>
       <div class="inventory-table-scroll"><table class="inventory-table inventory-processed-table"><thead><tr><th rowspan="3" class="inventory-identity">VARIEDAD</th>${factorHead}<th rowspan="3">TOTAL TALLOS</th></tr><tr>${groupedHead}</tr><tr>${columnHead}</tr></thead><tbody>${rows}</tbody><tfoot><tr><th class="inventory-identity">TOTAL</th>${totals}<td class="inventory-total" data-all-stems>${format(result.totals.stems)}</td></tr></tfoot></table></div>${mobile}`;

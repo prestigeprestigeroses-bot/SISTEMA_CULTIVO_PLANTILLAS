@@ -602,6 +602,7 @@ body.capture-open .view.active { animation: none; }
   .inventory-mobile-capture > label { display: grid; gap: 5px; margin-bottom: 10px; color: var(--muted); font-size: 10px; font-weight: 800; text-transform: uppercase; }
   .inventory-mobile-capture select { width: 100%; min-height: 41px; padding: 5px 9px; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); background: #fff; font-size: 14px; }
   .inventory-mobile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .inventory-mobile-factor { grid-column: 1 / -1; margin: 5px 0 0; padding: 8px 10px; border-radius: 6px; color: var(--forest-950); background: var(--leaf-pale); font-size: 12px; font-weight: 800; }
   .inventory-mobile-card { display: flex; align-items: center; justify-content: space-between; gap: 5px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--leaf-pale); }
   .inventory-mobile-process { margin-bottom: 9px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 7px; color: var(--process-ink); background: var(--process-main); font-size: 12px; font-weight: 800; }
   .inventory-mobile-card[class*="inventory-process-"] { background: var(--process-cell); border-left: 4px solid var(--process-main); }
