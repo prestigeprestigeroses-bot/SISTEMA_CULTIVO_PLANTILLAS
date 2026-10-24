@@ -3,6 +3,15 @@ const templates = require('./inventory-templates.json');
 function inventoryTemplate(key, farmCode) {
   const template = templates[key];
   if (!template || template.farmCode !== farmCode) throw new Error('Inventario no disponible para esta finca');
+  if (key === 'p1') return {
+    ...template,
+    processed: {
+      ...template.processed,
+      // Orden de presentación únicamente: las claves de las columnas guardadas no cambian.
+      columns: [...template.processed.columns].sort((a, b) =>
+        (b.stems ?? -1) - (a.stems ?? -1)),
+    },
+  };
   if (!template.sections) return template;
   return Object.fromEntries(Object.entries(template).filter(([field]) =>
     !['processed', 'bulk', 'guard'].includes(field) || template.sections.includes(field)));

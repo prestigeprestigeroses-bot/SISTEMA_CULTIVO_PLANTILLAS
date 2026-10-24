@@ -86,6 +86,22 @@ test('inventario ramos P1 conserva columnas previas y aplica nuevas láminas y f
   assert.equal(templates.p2.processed.columns.length, 48);
 });
 
+test('inventario ramos P1 presenta todos los factores de mayor a menor sin alterar los registros', () => {
+  const original = templates.p1.processed.columns;
+  const ordered = inventoryTemplate('p1', 'F1').processed.columns;
+  assert.deepEqual(ordered.map((column) => column.stems),
+    [...ordered.map((column) => column.stems)].sort((a, b) => (b ?? -1) - (a ?? -1)));
+  assert.deepEqual(new Set(ordered.map((column) => column.key)), new Set(original.map((column) => column.key)));
+  assert.equal(ordered.length, original.length);
+  assert.equal(original[0].key, 'B');
+  assert.notEqual(ordered[0].key, 'B');
+  const data = blankInventory();
+  data.processed['1:0:B'] = 2;
+  data.processed['1:0:AZ'] = 3;
+  assert.deepEqual(normalizeInventory(inventoryTemplate('p1', 'F1'), 2026, 10, data).processed, data.processed);
+  assert.equal(inventorySummary(inventoryTemplate('p1', 'F1'), data, 'processed', 1).totals.stems, 2 * 6 + 3 * 25);
+});
+
 test('nombres corregidos de variedades conservan sus posiciones y registros', () => {
   const varieties = templates.p1.processed.varieties;
   for (const [index, name] of [[7, 'MOODY BLUE'], [15, 'PINK OHARA'], [17, 'DEEP PURPLE'], [18, 'SUMMERSAND'], [19, 'SWAN']]) {

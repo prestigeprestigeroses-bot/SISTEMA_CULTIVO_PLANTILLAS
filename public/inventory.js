@@ -121,7 +121,17 @@
     const { varieties, columns } = model.template.processed;
     const groups = [...new Set(columns.map((column) => column.process))];
     if (!groups.includes(model.process)) model.process = groups[0];
-    const groupedHead = groups.map((group) => `<th class="inventory-process-header ${processClass(group)}" colspan="${columns.filter((column) => column.process === group).length}">${escapeHtml(group)}</th>`).join('');
+    const contiguousGroups = (getValue) => columns.reduce((runs, column) => {
+      const value = getValue(column);
+      const last = runs[runs.length - 1];
+      if (last && last.value === value) last.count += 1;
+      else runs.push({ value, count: 1 });
+      return runs;
+    }, []);
+    const factorHead = contiguousGroups((column) => column.stems).map(({ value, count }) =>
+      `<th class="inventory-factor-header" colspan="${count}">${value === null ? 'Sin factor' : `×${value} tallos`}</th>`).join('');
+    const groupedHead = contiguousGroups((column) => column.process).map(({ value, count }) =>
+      `<th class="inventory-process-header ${processClass(value)}" colspan="${count}">${escapeHtml(value)}</th>`).join('');
     const gradeLabel = (grade) => typeof grade === 'number' ? `Grado ${grade}` : escapeHtml(grade);
     const columnHead = columns.map((column) => `<th class="inventory-process-column ${processClass(column.process)}" title="${column.stems === null ? 'No se convierte a tallos' : `${column.stems} tallos por unidad`}">${gradeLabel(column.grade)}<small>${column.stems === null ? 'sin factor' : `${column.stems} tallos`}</small></th>`).join('');
     const rows = varieties.map((variety, row) => `<tr><th class="inventory-identity ${row === 0 ? 'inventory-freedom' : ''}">${escapeHtml(variety)}</th>${columns.map((column) => `<td class="inventory-process-cell ${processClass(column.process)}">${input('processed', row, column.key, `${variety} ${column.process} grado ${column.grade}`)}</td>`).join('')}<td class="inventory-total" data-row-stems="${row}">${format(result.details[row].stems)}</td></tr>`).join('');
@@ -133,8 +143,8 @@
       <div class="inventory-mobile-process ${processClass(model.process)}">${escapeHtml(model.process)}</div>
       <div class="inventory-mobile-grid">${mobileColumns.map((column) => `<div class="inventory-mobile-card ${processClass(column.process)}"><div><strong>${gradeLabel(column.grade)}</strong><span>${column.stems === null ? 'Sin factor de tallos' : `${column.stems} tallos por unidad`}</span></div>${input('processed', current, column.key, `${varieties[current]} ${column.process} grado ${column.grade}`)}</div>`).join('')}</div>
       <div class="inventory-mobile-total">${escapeHtml(varieties[current])}: <strong data-row-stems="${current}">${format(result.details[current].stems)}</strong> tallos</div></div>`;
-    return `<div class="inventory-note">Captura del día ${period().day}. Las cantidades se multiplican por los tallos de cada presentación; “Nacional” y “NAL” quedan registradas aparte porque la plantilla no les asigna factor.</div>
-      <div class="inventory-table-scroll"><table class="inventory-table inventory-processed-table"><thead><tr><th rowspan="2" class="inventory-identity">VARIEDAD</th>${groupedHead}<th rowspan="2">TOTAL TALLOS</th></tr><tr>${columnHead}</tr></thead><tbody>${rows}</tbody><tfoot><tr><th class="inventory-identity">TOTAL</th>${totals}<td class="inventory-total" data-all-stems>${format(result.totals.stems)}</td></tr></tfoot></table></div>${mobile}`;
+    return `<div class="inventory-note">Captura del día ${period().day}. Las presentaciones se muestran por cantidad de tallos (de mayor a menor); las casillas y sus registros se conservan. “Nacional” y “NAL” quedan aparte porque no tienen factor.</div>
+      <div class="inventory-table-scroll"><table class="inventory-table inventory-processed-table"><thead><tr><th rowspan="3" class="inventory-identity">VARIEDAD</th>${factorHead}<th rowspan="3">TOTAL TALLOS</th></tr><tr>${groupedHead}</tr><tr>${columnHead}</tr></thead><tbody>${rows}</tbody><tfoot><tr><th class="inventory-identity">TOTAL</th>${totals}<td class="inventory-total" data-all-stems>${format(result.totals.stems)}</td></tr></tfoot></table></div>${mobile}`;
   }
 
   function gridEditor(result) {

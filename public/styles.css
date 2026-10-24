@@ -366,6 +366,9 @@ h1 { margin: 5px 0 5px; color: var(--forest-950); font-size: clamp(28px, 3vw, 38
 .inventory-table th, .inventory-table td { min-width: 69px; height: 41px; padding: 3px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); text-align: center; }
 .inventory-table thead th { position: sticky; top: 0; z-index: 2; color: var(--forest-950); background: var(--leaf-pale); font-size: 10px; }
 .inventory-table thead tr:nth-child(2) th { top: 39px; }
+.inventory-processed-table thead tr:nth-child(2) th { top: 41px; }
+.inventory-processed-table thead tr:nth-child(3) th { top: 82px; }
+.inventory-processed-table thead .inventory-factor-header { color: var(--forest-950); background: var(--leaf-pale); font-size: 11px; }
 .inventory-table thead th small, .inventory-table tbody th small { display: block; color: var(--muted); font-size: 9px; }
 .inventory-process-pvc { --process-main: #d5d9df; --process-soft: #eceef1; --process-cell: #f7f8f9; --process-ink: #28303a; }
 .inventory-process-verde { --process-main: #8ed873; --process-soft: #e4f5dc; --process-cell: #f3faef; --process-ink: #173d24; }
