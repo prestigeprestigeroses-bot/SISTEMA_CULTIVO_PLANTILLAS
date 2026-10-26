@@ -389,10 +389,11 @@ function renderMobile() {
   const fixed = isFixedFarm();
   const day = state.selectedDay;
   const today = todayIndex();
+  const gridHead = '<div class="mobile-grid-head" role="row"><span role="columnheader">BLQ</span><span role="columnheader">VARIEDAD</span><span role="columnheader">PROY.</span><span role="columnheader">REAL</span><span role="columnheader">T.PROY.</span><span role="columnheader">T.REAL</span><span role="columnheader">ARREG.</span></div>';
   const rows = [];
   state.records.forEach((record, index) => {
     if (fixed && (index === 0 || state.records[index - 1].production !== record.production)) {
-      rows.push(`<div class="mobile-production">PRODUCCIÓN ${record.production}</div>`);
+      rows.push(`<div class="mobile-production">PRODUCCIÓN ${record.production}</div>${gridHead}`);
     }
     const sum = rowTotals(record);
     rows.push(`<div class="mobile-record" role="row" data-mobile-row="${index}">
@@ -408,7 +409,7 @@ function renderMobile() {
       rows.push(`<div class="mobile-summary" data-mobile-production="${record.production}"><span class="mobile-summary-label">TOTAL P${record.production}</span><span class="mobile-summary-projected">0</span><span class="mobile-summary-actual">0</span><span class="mobile-summary-arrangements">0</span></div>`);
     }
   });
-  elements.mobileCapture.innerHTML = `<div class="mobile-days" role="group" aria-label="Día para capturar">${DAYS.map((name, index) => `<button type="button" class="${day === index ? 'active' : ''} ${today === index ? 'today' : ''}" data-select-day="${index}" aria-pressed="${day === index}" ${today === index ? 'aria-current="date"' : ''}>${name.slice(0, 3)}</button>`).join('')}</div><div class="mobile-sheet-scroll"><div class="mobile-sheet day-${day}" role="table" aria-label="Planilla de ${DAYS[day]}"><div class="mobile-grid-head" role="row"><span role="columnheader">BLQ</span><span role="columnheader">VARIEDAD</span><span role="columnheader">PROY.</span><span role="columnheader">REAL</span><span role="columnheader">T.PROY.</span><span role="columnheader">T.REAL</span><span role="columnheader">ARREG.</span></div>${rows.join('') || '<p class="mobile-day-note">Aún no hay filas en esta semana.</p>'}<div class="mobile-summary mobile-week-summary"><span class="mobile-summary-label">TOTAL SEMANA</span><span class="mobile-summary-projected">0</span><span class="mobile-summary-actual">0</span><span class="mobile-summary-arrangements">0</span></div></div></div>`;
+  elements.mobileCapture.innerHTML = `<div class="mobile-days" role="group" aria-label="Día para capturar">${DAYS.map((name, index) => `<button type="button" class="${day === index ? 'active' : ''} ${today === index ? 'today' : ''}" data-select-day="${index}" aria-pressed="${day === index}" ${today === index ? 'aria-current="date"' : ''}>${name.slice(0, 3)}</button>`).join('')}</div><div class="mobile-sheet-scroll"><div class="mobile-sheet day-${day}" role="table" aria-label="Planilla de ${DAYS[day]}">${fixed && rows.length ? '' : gridHead}${rows.join('') || '<p class="mobile-day-note">Aún no hay filas en esta semana.</p>'}<div class="mobile-summary mobile-week-summary"><span class="mobile-summary-label">TOTAL SEMANA</span><span class="mobile-summary-projected">0</span><span class="mobile-summary-actual">0</span><span class="mobile-summary-arrangements">0</span></div></div></div>`;
   renderMobileSummaries();
 }
 
