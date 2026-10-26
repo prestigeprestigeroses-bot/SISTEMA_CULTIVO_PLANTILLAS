@@ -23,7 +23,9 @@
         "SHIMMER",
         "DEEP PURPLE",
         "SUMMERSAND",
-        "SWAN"
+        "SWAN",
+        "CANDLELIGHT",
+        "WHITE OHARA"
       ],
       "columns": [
         {
@@ -367,6 +369,30 @@
           "process": "NACIONAL",
           "grade": "NACIONAL",
           "stems": null
+        },
+        {
+          "key": "BG",
+          "process": "LÁMINA AMARILLA",
+          "grade": 40,
+          "stems": 10
+        },
+        {
+          "key": "BH",
+          "process": "LÁMINA AMARILLA",
+          "grade": 50,
+          "stems": 10
+        },
+        {
+          "key": "BI",
+          "process": "LÁMINA MORADA",
+          "grade": 40,
+          "stems": 10
+        },
+        {
+          "key": "BJ",
+          "process": "LÁMINA MORADA",
+          "grade": 50,
+          "stems": 10
         }
       ]
     },

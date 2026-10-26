@@ -8,7 +8,7 @@ test('P1 ofrece dos inventarios, pero flor que amanece de P2 solo tiene granel',
   assert.deepEqual(Object.keys(templates).filter((key) => templates[key].farmCode === 'F2'), ['p2']);
   for (const template of [templates.p1, templates.p2]) {
     assert.ok(template.processed.varieties.length > 0);
-    assert.equal(template.processed.columns.length, template === templates.p1 ? 57 : 48);
+    assert.equal(template.processed.columns.length, template === templates.p1 ? 61 : 48);
     assert.ok(template.bulk.length > 0);
     assert.ok(template.guard.length > 0);
   }
@@ -78,7 +78,7 @@ test('inventario ramos P1 conserva columnas previas y aplica nuevas láminas y f
     ['BE', 'LÁMINA ROJA', 40, 25],
     ['BF', 'LÁMINA ROJA', 60, 25],
   ]) assert.deepEqual(columns.find((column) => column.key === key), { key, process, grade, stems });
-  assert.deepEqual(columns.filter((column) => column.process === 'LÁMINA AMARILLA').map((column) => column.stems), [25, 25, 25, 25]);
+  assert.deepEqual(columns.filter((column) => column.process === 'LÁMINA AMARILLA').map((column) => column.stems), [25, 25, 25, 25, 10, 10]);
   const data = blankInventory();
   for (const key of ['B', 'C', 'D', 'AX', 'AY', 'AZ', 'BA', 'BB', 'BC', 'BD', 'BE', 'BF', 'AO', 'AP', 'AQ', 'AR']) data.processed[`21:0:${key}`] = 1;
   assert.deepEqual(normalizeInventory(templates.p1, 2026, 10, data).processed, data.processed);
@@ -100,6 +100,22 @@ test('inventario ramos P1 presenta todos los factores de mayor a menor sin alter
   data.processed['1:0:AZ'] = 3;
   assert.deepEqual(normalizeInventory(inventoryTemplate('p1', 'F1'), 2026, 10, data).processed, data.processed);
   assert.equal(inventorySummary(inventoryTemplate('p1', 'F1'), data, 'processed', 1).totals.stems, 2 * 6 + 3 * 25);
+});
+
+test('ramos P1 agrega CANDLELIGHT, WHITE OHARA y grados 40 y 50 por 10 tallos en amarilla y morada', () => {
+  const template = inventoryTemplate('p1', 'F1');
+  assert.deepEqual(template.processed.varieties.slice(-4), ['SUMMERSAND', 'SWAN', 'CANDLELIGHT', 'WHITE OHARA']);
+  for (const [key, process, grade] of [
+    ['BG', 'LÁMINA AMARILLA', 40], ['BH', 'LÁMINA AMARILLA', 50],
+    ['BI', 'LÁMINA MORADA', 40], ['BJ', 'LÁMINA MORADA', 50],
+  ]) assert.deepEqual(template.processed.columns.find((column) => column.key === key), { key, process, grade, stems: 10 });
+  const data = blankInventory();
+  data.processed['1:20:BG'] = 2;
+  data.processed['1:21:BJ'] = 3;
+  assert.deepEqual(normalizeInventory(template, 2026, 10, data).processed, data.processed);
+  assert.equal(inventorySummary(template, data, 'processed', 1).totals.stems, 50);
+  assert.equal(templates.p1.processed.varieties[19], 'SWAN');
+  assert.equal(templates.p2.processed.columns.length, 48);
 });
 
 test('nombres corregidos de variedades conservan sus posiciones y registros', () => {
