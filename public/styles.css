@@ -509,6 +509,7 @@ body.capture-open .view.active { animation: none; }
   .mobile-days button.active { outline: 2px solid var(--forest-900); outline-offset: -2px; }
   .mobile-days button.today, .field-day-tabs button.today { border-color: #247046; color: #fff; background: #2d8754; }
   .mobile-days button.today.active, .field-day-tabs button.today.active { outline: 2px solid #16492e; }
+  .mobile-days button.active:not(.today) { border-color: #1e5d9a; color: #fff; background: #2875bd; outline: 2px solid #174a80; outline-offset: -2px; }
   .mobile-sheet-scroll { width: 100%; overflow-x: auto; margin-top: 8px; border: 1px solid #d8dfd9; border-radius: 8px; }
   .mobile-sheet { min-width: 340px; }
   .mobile-grid-head, .mobile-record, .mobile-summary { display: grid; grid-template-columns: 7% 27% 13% 13% 14% 13% 13%; align-items: stretch; }

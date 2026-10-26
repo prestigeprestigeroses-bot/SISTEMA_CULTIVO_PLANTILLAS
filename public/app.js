@@ -204,7 +204,8 @@ function renderPeriod() {
   elements.periodTitle.textContent = range.title;
   elements.periodSubtitle.textContent = range.subtitle;
   document.querySelector('#tableTitle').textContent = elements.sheetCard.classList.contains('sheet-expanded')
-    ? `Semana ${state.week}` : `Proyección por día · Semana ${state.week}`;
+    ? `Semana ${state.week} · ${DAYS[state.selectedDay]}`
+    : `Proyección por día · Semana ${state.week} · ${DAYS[state.selectedDay]}`;
   document.querySelectorAll('[data-week-label]').forEach((label) => { label.textContent = `Semana ${state.week} · ${state.year} · ${range.title}`; });
 }
 
@@ -678,6 +679,7 @@ async function loadWeek() {
     showToast(error.message, 'error');
   } finally {
     state.loading = false;
+    renderPeriod();
     renderRows();
   }
 }
@@ -907,6 +909,7 @@ elements.mobileCapture.addEventListener('click', (event) => {
   if (!button) return;
   state.selectedDay = Number(button.dataset.selectDay);
   renderMobile();
+  renderPeriod();
 });
 
 elements.mobileCapture.addEventListener('input', (event) => {
@@ -1141,7 +1144,10 @@ function refreshTodaySelection() {
   lastToday = current;
   state.selectedDay = current;
   state.fieldDay = current;
-  if (state.records.length) renderMobile();
+  if (state.records.length) {
+    renderMobile();
+    if (state.year && state.week) renderPeriod();
+  }
   if (state.fieldData) renderFieldEditors();
 }
 document.addEventListener('visibilitychange', () => {
