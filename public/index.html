@@ -256,6 +256,19 @@
               <div><div class="eyebrow">SOLO LECTURA</div><h1>Consulta de registros</h1><p>Selecciona una finca arriba y abre la información que deseas revisar. Este acceso no permite modificar datos. Los registros abiertos se actualizan automáticamente cada 15 segundos.</p></div>
             </div>
             <div class="consultation-farm">Mostrando registros de <strong id="consultFarmName">Finca P1</strong></div>
+            <section class="consultation-totals" aria-labelledby="consultTotalsTitle">
+              <div class="consultation-totals-heading">
+                <div><h2 id="consultTotalsTitle">Total rojo y color</h2><p id="consultTotalsPeriod">Semana actual</p></div>
+                <span>Rojo: Freedom · Color: demás variedades</span>
+              </div>
+              <div id="consultDayButtons" class="consultation-days" role="group" aria-label="Día del resumen"></div>
+              <div class="consultation-totals-scroll">
+                <table class="consultation-totals-table">
+                  <thead><tr><th scope="col">Tipo</th><th scope="col">Proy. día</th><th scope="col">Real día</th><th scope="col">Proy. sem.</th><th scope="col">Real sem.</th></tr></thead>
+                  <tbody id="consultTotalsBody"></tbody>
+                </table>
+              </div>
+            </section>
             <div class="consultation-grid">
               <button type="button" data-view="projection"><strong>Proyección semanal</strong><span>Proyección y producción real por semana.</span></button>
               <button type="button" data-view="temperature"><strong>Temperatura</strong><span>Temperaturas, humedad y precipitación.</span></button>

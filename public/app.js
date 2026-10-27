@@ -96,6 +96,9 @@ const elements = {
   historyGrid: document.querySelector('#historyGrid'),
   historyCount: document.querySelector('#historyCount'),
   historySearch: document.querySelector('#historySearch'),
+  consultTotalsPeriod: document.querySelector('#consultTotalsPeriod'),
+  consultDayButtons: document.querySelector('#consultDayButtons'),
+  consultTotalsBody: document.querySelector('#consultTotalsBody'),
   toast: document.querySelector('#toast'),
 };
 
@@ -364,6 +367,24 @@ function renderFoot() {
     row('TOTAL ROJO · FREEDOM', summaries.red, 'category-red') +
     row('TOTAL COLOR · OTRAS VARIEDADES', summaries.color, 'category-color') +
     row('TOTAL SEMANA', summaries.total, 'category-all', formatNumber(arrangements));
+  renderConsultationTotals();
+}
+
+function renderConsultationTotals() {
+  if (!state.year || !state.week) return;
+  const summaries = window.calculateProductionTotals(state.records);
+  const day = state.selectedDay;
+  const today = todayIndex();
+  elements.consultTotalsPeriod.textContent = `Semana ${state.week} · ${state.year} · ${DAYS[day]}`;
+  elements.consultDayButtons.innerHTML = DAYS.map((name, index) =>
+    `<button type="button" data-consult-day="${index}" class="${index === day ? 'active' : ''} ${index === today ? 'today' : ''}" aria-pressed="${index === day}" ${index === today ? 'aria-current="date"' : ''}>${name.slice(0, 3)}</button>`
+  ).join('');
+  elements.consultTotalsBody.innerHTML = [
+    ['red', 'ROJO'], ['color', 'COLOR'], ['total', 'TOTAL'],
+  ].map(([key, label]) => {
+    const values = summaries[key];
+    return `<tr class="consultation-total-${key}"><th scope="row">${label}</th><td>${formatNumber(values.days[day].projected)}</td><td>${formatNumber(values.days[day].actual)}</td><td>${formatNumber(values.projected)}</td><td>${formatNumber(values.actual)}</td></tr>`;
+  }).join('');
 }
 
 function updateRowDisplay(rowIndex) {
@@ -810,6 +831,7 @@ async function showView(name) {
   document.querySelectorAll('[data-view]').forEach((button) => button.classList.toggle('active', button.dataset.view === name));
   if (name === 'history') await loadHistory();
   if (name === 'inventory') await window.inventoryApp?.show();
+  if (name === 'consultation') renderConsultationTotals();
 }
 
 async function loadHistory() {
@@ -920,6 +942,16 @@ elements.mobileCapture.addEventListener('click', (event) => {
   const button = event.target.closest('[data-select-day]');
   if (!button) return;
   state.selectedDay = Number(button.dataset.selectDay);
+  renderMobile();
+  renderPeriod();
+  renderConsultationTotals();
+});
+
+elements.consultDayButtons.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-consult-day]');
+  if (!button) return;
+  state.selectedDay = Number(button.dataset.consultDay);
+  renderConsultationTotals();
   renderMobile();
   renderPeriod();
 });
@@ -1160,6 +1192,7 @@ function refreshTodaySelection() {
     renderMobile();
     if (state.year && state.week) renderPeriod();
   }
+  renderConsultationTotals();
   if (state.fieldData) renderFieldEditors();
 }
 document.addEventListener('visibilitychange', () => {

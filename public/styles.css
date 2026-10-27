@@ -132,6 +132,24 @@ main { grid-column: 2; min-width: 0; }
 .logout-button { min-height: 36px; padding: 0 11px; border: 1px solid var(--line); border-radius: 8px; color: var(--forest-800); background: var(--paper); font-size: 12px; font-weight: 800; }
 body.role-viewer #saveButton, body.role-viewer #saveSheetButton, body.role-viewer .field-save, body.role-viewer #inventorySave, body.role-viewer #entryCard { display: none !important; }
 .consultation-farm { margin-bottom: 16px; padding: 14px 17px; border: 1px solid var(--line); border-radius: 10px; background: var(--leaf-pale); color: var(--forest-800); font-size: 13px; }
+.consultation-totals { margin-bottom: 18px; padding: 16px; border: 1px solid var(--line); border-radius: 11px; background: var(--paper); box-shadow: var(--shadow); }
+.consultation-totals-heading { display: flex; align-items: end; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.consultation-totals-heading h2 { margin: 0; color: var(--forest-900); font-size: 17px; }
+.consultation-totals-heading p, .consultation-totals-heading > span { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+.consultation-days { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; }
+.consultation-days button { flex: 1 0 42px; min-height: 34px; border: 1px solid var(--line); border-radius: 7px; color: var(--muted); background: #edf0ee; font-size: 12px; font-weight: 800; }
+.consultation-days button.today:not(.active) { border-color: var(--leaf-strong); color: var(--forest-800); }
+.consultation-days button.active { border-color: #326cb3; color: #fff; background: #326cb3; }
+.consultation-totals-scroll { overflow-x: auto; }
+.consultation-totals-table { width: 100%; border-collapse: collapse; text-align: right; font-variant-numeric: tabular-nums; }
+.consultation-totals-table th, .consultation-totals-table td { padding: 10px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.consultation-totals-table thead th { color: var(--muted); font-size: 11px; text-transform: uppercase; }
+.consultation-totals-table th:first-child { text-align: left; }
+.consultation-totals-table tbody { font-size: 13px; font-weight: 700; }
+.consultation-total-red th { color: #ad3131; }
+.consultation-total-color th { color: var(--forest-800); }
+.consultation-total-total { background: var(--leaf-pale); }
+.consultation-total-total th, .consultation-total-total td { border-bottom: 0; font-weight: 900; }
 .consultation-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 .consultation-grid button { display: grid; gap: 7px; min-height: 108px; padding: 17px; border: 1px solid var(--line); border-radius: 11px; color: var(--ink); background: var(--paper); text-align: left; box-shadow: var(--shadow); }
 .consultation-grid button:hover { border-color: var(--forest-700); }
