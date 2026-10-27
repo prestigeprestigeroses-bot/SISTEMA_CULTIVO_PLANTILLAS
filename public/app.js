@@ -148,17 +148,7 @@ function isFixedFarm() {
 }
 
 function totals() {
-  return state.records.reduce((summary, record) => {
-    record.days.forEach((day, index) => {
-      const projected = Number(day.projected) || 0;
-      const actual = Number(day.actual) || 0;
-      summary.projected += projected;
-      summary.actual += actual;
-      summary.days[index].projected += projected;
-      summary.days[index].actual += actual;
-    });
-    return summary;
-  }, { projected: 0, actual: 0, days: blankDays() });
+  return window.calculateProductionTotals(state.records).total;
 }
 
 function setDirty(value) {
@@ -359,17 +349,21 @@ function renderGroupTotals() {
 }
 
 function renderFoot() {
-  const summary = totals();
+  const summaries = window.calculateProductionTotals(state.records);
   const arrangements = state.records.reduce((sum, record) => sum + (Number(record.arrangements) || 0), 0);
-  elements.projectionFoot.innerHTML = `
-    <tr>
-      <td colspan="2">TOTAL SEMANA</td>
+  const row = (label, summary, className, arrangementsValue = '') => `
+    <tr class="${className}">
+      <td colspan="2">${label}</td>
       ${summary.days.map((day) => `<td>${formatNumber(day.projected)}</td><td>${formatNumber(day.actual)}</td>`).join('')}
       <td class="total-projected">${formatNumber(summary.projected)}</td>
       <td class="total-real">${formatNumber(summary.actual)}</td>
-      <td class="arrangements-total">${formatNumber(arrangements)}</td>
+      <td class="arrangements-total">${arrangementsValue}</td>
       ${isFixedFarm() ? '' : '<td></td>'}
     </tr>`;
+  elements.projectionFoot.innerHTML =
+    row('TOTAL ROJO · FREEDOM', summaries.red, 'category-red') +
+    row('TOTAL COLOR · OTRAS VARIEDADES', summaries.color, 'category-color') +
+    row('TOTAL SEMANA', summaries.total, 'category-all', formatNumber(arrangements));
 }
 
 function updateRowDisplay(rowIndex) {
@@ -406,10 +400,12 @@ function renderMobile() {
       <label class="mobile-arrangements" role="cell"><span class="sr-only">Total arreglos</span><input type="number" min="0" step="1" inputmode="numeric" data-field="arrangements" aria-label="Total arreglos ${record.variety} bloque ${record.block}" value="${Number(record.arrangements) || ''}" placeholder="0"></label>
     </div>`);
     if (fixed && (index === state.records.length - 1 || state.records[index + 1].production !== record.production)) {
-      rows.push(`<div class="mobile-summary" data-mobile-production="${record.production}"><span class="mobile-summary-label">TOTAL P${record.production}</span><span class="mobile-summary-projected">0</span><span class="mobile-summary-actual">0</span><span class="mobile-summary-arrangements">0</span></div>`);
+      rows.push(`<div class="mobile-summary mobile-production-summary" data-mobile-production="${record.production}"><span class="mobile-summary-label">TOTAL P${record.production}</span><span class="mobile-summary-day-projected">0</span><span class="mobile-summary-day-actual">0</span><span class="mobile-summary-projected">0</span><span class="mobile-summary-actual">0</span><span class="mobile-summary-arrangements">0</span></div>`);
     }
   });
-  elements.mobileCapture.innerHTML = `<div class="mobile-days" role="group" aria-label="Día para capturar">${DAYS.map((name, index) => `<button type="button" class="${day === index ? 'active' : ''} ${today === index ? 'today' : ''}" data-select-day="${index}" aria-pressed="${day === index}" ${today === index ? 'aria-current="date"' : ''}>${name.slice(0, 3)}</button>`).join('')}</div><div class="mobile-sheet-scroll"><div class="mobile-sheet day-${day}" role="table" aria-label="Planilla de ${DAYS[day]}">${fixed && rows.length ? '' : gridHead}${rows.join('') || '<p class="mobile-day-note">Aún no hay filas en esta semana.</p>'}<div class="mobile-summary mobile-week-summary"><span class="mobile-summary-label">TOTAL SEMANA</span><span class="mobile-summary-projected">0</span><span class="mobile-summary-actual">0</span><span class="mobile-summary-arrangements">0</span></div></div></div>`;
+  const categoryRow = (key, label) => `<div class="mobile-category-row mobile-category-${key}" data-mobile-category="${key}" role="row"><strong role="cell">${label}</strong><span role="cell" data-category-value="day-projected">0</span><span role="cell" data-category-value="day-actual">0</span><span role="cell" data-category-value="week-projected">0</span><span role="cell" data-category-value="week-actual">0</span></div>`;
+  const categorySummary = `<div class="mobile-category-title">RESUMEN · ${DAYS[day].toUpperCase()}<small>Rojo: Freedom · Color: demás variedades</small></div><div class="mobile-category-head" role="row"><span role="columnheader">TIPO</span><span role="columnheader">PROY.<br>DÍA</span><span role="columnheader">REAL<br>DÍA</span><span role="columnheader">PROY.<br>SEM.</span><span role="columnheader">REAL<br>SEM.</span></div>${categoryRow('red', 'ROJO')}${categoryRow('color', 'COLOR')}${categoryRow('total', 'TOTAL')}`;
+  elements.mobileCapture.innerHTML = `<div class="mobile-days" role="group" aria-label="Día para capturar">${DAYS.map((name, index) => `<button type="button" class="${day === index ? 'active' : ''} ${today === index ? 'today' : ''}" data-select-day="${index}" aria-pressed="${day === index}" ${today === index ? 'aria-current="date"' : ''}>${name.slice(0, 3)}</button>`).join('')}</div><div class="mobile-sheet-scroll"><div class="mobile-sheet day-${day}" role="table" aria-label="Planilla de ${DAYS[day]}">${fixed && rows.length ? '' : gridHead}${rows.join('') || '<p class="mobile-day-note">Aún no hay filas en esta semana.</p>'}${categorySummary}<div class="mobile-summary mobile-week-summary"><span class="mobile-summary-label">TOTAL SEMANA</span><span class="mobile-summary-projected">0</span><span class="mobile-summary-actual">0</span><span class="mobile-summary-arrangements">0</span></div></div></div>`;
   renderMobileSummaries();
 }
 
@@ -432,12 +428,27 @@ function updateMobileCard(rowIndex) {
 function renderMobileSummaries() {
   const update = (element, records) => {
     if (!element) return;
+    const day = state.selectedDay;
+    const dayProjected = element.querySelector('.mobile-summary-day-projected');
+    const dayActual = element.querySelector('.mobile-summary-day-actual');
+    if (dayProjected) dayProjected.textContent = formatNumber(records.reduce((sum, record) => sum + (Number(record.days[day].projected) || 0), 0));
+    if (dayActual) dayActual.textContent = formatNumber(records.reduce((sum, record) => sum + (Number(record.days[day].actual) || 0), 0));
     element.querySelector('.mobile-summary-projected').textContent = formatNumber(records.reduce((sum, record) => sum + rowTotals(record).projected, 0));
     element.querySelector('.mobile-summary-actual').textContent = formatNumber(records.reduce((sum, record) => sum + rowTotals(record).actual, 0));
     element.querySelector('.mobile-summary-arrangements').textContent = formatNumber(records.reduce((sum, record) => sum + (Number(record.arrangements) || 0), 0));
   };
   for (const production of [1, 2]) update(elements.mobileCapture.querySelector(`[data-mobile-production="${production}"]`), state.records.filter((record) => record.production === production));
   update(elements.mobileCapture.querySelector('.mobile-week-summary'), state.records);
+  const categories = window.calculateProductionTotals(state.records);
+  for (const key of ['red', 'color', 'total']) {
+    const row = elements.mobileCapture.querySelector(`[data-mobile-category="${key}"]`);
+    if (!row) continue;
+    const values = categories[key];
+    row.querySelector('[data-category-value="day-projected"]').textContent = formatNumber(values.days[state.selectedDay].projected);
+    row.querySelector('[data-category-value="day-actual"]').textContent = formatNumber(values.days[state.selectedDay].actual);
+    row.querySelector('[data-category-value="week-projected"]').textContent = formatNumber(values.projected);
+    row.querySelector('[data-category-value="week-actual"]').textContent = formatNumber(values.actual);
+  }
 }
 
 const CLIMATE_ROWS = {
