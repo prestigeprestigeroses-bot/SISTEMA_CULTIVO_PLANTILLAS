@@ -559,8 +559,6 @@ body.capture-open .view.active { animation: none; }
   .mobile-category-red { color: #942d3b; background: #fdecef; }
   .mobile-category-color { background: var(--leaf-pale); }
   .mobile-category-total { color: #fff; background: var(--forest-800); }
-  .mobile-category-head > :nth-child(3), .mobile-category-head > :nth-child(5) { color: #483500; background: #f5d36a; }
-  .mobile-category-row > :nth-child(3), .mobile-category-row > :nth-child(5) { color: #483500; background: #ffeda6; }
   .sheet-expanded .mobile-capture { display: flex; flex: 1; flex-direction: column; min-height: 0; padding: 6px; }
   .sheet-expanded .capture-input-context:not([hidden]) { display: flex; flex: none; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 10px; border-top: 1px solid var(--line); color: var(--forest-950); background: var(--leaf-pale); font-size: 12px; font-weight: 800; }
   .capture-input-context span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
