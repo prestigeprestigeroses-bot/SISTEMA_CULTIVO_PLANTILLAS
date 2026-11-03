@@ -221,8 +221,27 @@ test('total mensual de tallos suma secciones y respeta inventario solo granel', 
   assert.equal(full.sections.bulk.stems, 2 * templates.p1.bulk[0].stemsPerBunch + 7);
   assert.equal(full.sections.guard.stems, 3 * templates.p1.guard[0].stemsPerBunch);
   assert.equal(full.stems, Object.values(full.sections).reduce((sum, item) => sum + item.stems, 0));
+  assert.equal(full.dailyStems[0], 12 + 2 * templates.p1.bulk[0].stemsPerBunch + 3 * templates.p1.guard[0].stemsPerBunch);
+  assert.equal(full.dailyStems[1], 6);
+  assert.equal(full.dailyStems.reduce((sum, stems) => sum + stems, 0) + 7, full.stems);
   const bulkOnly = inventoryMonthSummary(inventoryTemplate('p1_p2', 'F1'), data, 2026, 10);
   assert.deepEqual(Object.keys(bulkOnly.sections), ['bulk']);
+  assert.equal(bulkOnly.dailyStems[0], 2 * templates.p1_p2.bulk[0].stemsPerBunch);
+  assert.equal(bulkOnly.dailyStems[1], 0);
+  assert.equal(bulkOnly.dailyStems.reduce((sum, stems) => sum + stems, 0) + 7, bulkOnly.stems);
+});
+
+test('total diario P2 suma granel y guarde y no cuenta FN ni filas retiradas', () => {
+  const template = inventoryTemplate('p2', 'F2');
+  const data = blankInventory();
+  data.bulk['0:3'] = 2;
+  data.guard['0:3'] = 3;
+  data.bulk['0:FN'] = 11;
+  data.guard['21:3'] = 9;
+  const result = inventoryMonthSummary(template, data, 2026, 10);
+  assert.equal(result.dailyStems[2], 5 * template.bulk[0].stemsPerBunch);
+  assert.equal(result.dailyStems[3], 0);
+  assert.equal(result.dailyStems.reduce((sum, stems) => sum + stems, 0) + 11, result.stems);
 });
 
 test('valida finca, mes, día, variedad y columna antes de guardar', async () => {

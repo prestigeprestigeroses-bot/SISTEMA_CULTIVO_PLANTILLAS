@@ -101,10 +101,29 @@ function inventoryMonthSummary(template, data, year, month) {
   const normalized = normalizeInventory(template, year, month, data);
   const sections = availableSections(template);
   const days = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const byVariety = new Map();
+  const dailyStems = Array(days).fill(0);
   const bySection = Object.fromEntries(sections.map((section) => {
     const summaries = section === 'processed'
       ? Array.from({ length: days }, (_, day) => inventorySummary(template, normalized, section, day + 1))
       : [inventorySummary(template, normalized, section, 1)];
+    if (section === 'processed') {
+      summaries.forEach((summary, index) => { dailyStems[index] += summary.totals.stems; });
+    } else {
+      template[section].forEach((row, index) => {
+        if (row.retired || row.stemsPerBunch === null) return;
+        for (let day = 1; day <= days; day += 1) {
+          dailyStems[day - 1] += (normalized[section][`${index}:${day}`] || 0) * row.stemsPerBunch;
+        }
+      });
+    }
+    for (const summary of summaries) {
+      for (const row of summary.details) {
+        if (!row.stems) continue;
+        const name = String(row.name).trim().toUpperCase();
+        byVariety.set(name, (byVariety.get(name) || 0) + row.stems);
+      }
+    }
     const totals = summaries.reduce((acc, item) => {
       for (const key of Object.keys(acc)) acc[key] += item.totals[key];
       return acc;
@@ -114,6 +133,8 @@ function inventoryMonthSummary(template, data, year, month) {
   return {
     sections: bySection,
     stems: Object.values(bySection).reduce((sum, totals) => sum + totals.stems, 0),
+    varieties: [...byVariety].map(([name, stems]) => ({ name, stems })),
+    dailyStems,
   };
 }
 

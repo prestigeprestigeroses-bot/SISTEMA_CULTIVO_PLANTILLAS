@@ -140,6 +140,29 @@ async function buildFarmInventoryWorkbook({ farm, year, month, summaries }) {
   }
   appendTotals(sheet, 'TOTAL FINCA', [null, total]);
   sheet.getColumn(2).width = 25;
+
+  const inventories = summaries.map((item) => item.label);
+  const breakdown = new Map();
+  for (let index = 0; index < summaries.length; index += 1) {
+    for (const variety of summaries[index].summary.varieties || []) {
+      if (!breakdown.has(variety.name)) breakdown.set(variety.name, Array(summaries.length).fill(0));
+      breakdown.get(variety.name)[index] += variety.stems;
+    }
+  }
+  const showInventories = inventories.length > 1;
+  const varietySheet = setupSheet(workbook, 'Por variedad', 'TOTAL DE TALLOS POR VARIEDAD', farm, period,
+    ['VARIEDAD', ...(showInventories ? inventories : []), 'TOTAL TALLOS']);
+  varietySheet.getColumn(1).width = 29;
+  if (showInventories) inventories.forEach((_, index) => { varietySheet.getColumn(index + 2).width = 28; });
+  for (let column = 2; column <= varietySheet.columnCount; column += 1) {
+    varietySheet.getColumn(column).numFmt = '#,##0';
+  }
+  const totalsByInventory = Array(summaries.length).fill(0);
+  for (const [name, values] of [...breakdown].sort(([left], [right]) => left.localeCompare(right, 'es'))) {
+    values.forEach((value, index) => { totalsByInventory[index] += value; });
+    varietySheet.addRow([name, ...(showInventories ? values : []), values.reduce((sum, value) => sum + value, 0)]);
+  }
+  appendTotals(varietySheet, 'TOTAL FINCA', [...(showInventories ? totalsByInventory : []), total]);
   return workbook.xlsx.writeBuffer();
 }
 

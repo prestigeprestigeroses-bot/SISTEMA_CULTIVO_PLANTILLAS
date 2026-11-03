@@ -73,3 +73,49 @@ test('Excel de guarde P2 usa la nueva lista sin exportar variedades retiradas', 
   assert.ok(!names.includes('FREEDOM RP'));
   assert.equal(inventoryMonthSummary(template, data, 2026, 10).sections.guard.stems, 100);
 });
+
+test('Excel total finca P1 suma cada variedad entre sus dos inventarios sin mezclar presentaciones', async () => {
+  const ownTemplate = inventoryTemplate('p1', 'F1');
+  const own = blankInventory();
+  own.processed['1:0:B'] = 2; // FREEDOM: 2 × 6 tallos.
+  own.bulk['0:1'] = 2; // FREEDOM CORTO: 2 × 25 tallos.
+  own.bulk['0:FN'] = 7; // FN son tallos directos.
+  own.guard['0:2'] = 3; // FREEDOM CORTO: 3 × 25 tallos.
+  const fromP2Template = inventoryTemplate('p1_p2', 'F1');
+  const fromP2 = blankInventory();
+  fromP2.bulk['0:1'] = 4;
+  fromP2.bulk['0:FN'] = 11;
+  const summaries = [
+    { label: ownTemplate.label, summary: inventoryMonthSummary(ownTemplate, own, 2026, 10) },
+    { label: fromP2Template.label, summary: inventoryMonthSummary(fromP2Template, fromP2, 2026, 10) },
+  ];
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(await buildFarmInventoryWorkbook({ farm: p1, year: 2026, month: 10, summaries }));
+  assert.deepEqual(workbook.worksheets.map((sheet) => sheet.name), ['Total finca', 'Por variedad']);
+  const sheet = workbook.getWorksheet('Por variedad');
+  const rowFor = (name) => sheet.getRows(5, sheet.rowCount - 4).find((row) => row.getCell(1).value === name);
+  assert.equal(sheet.getCell('B4').value, 'Inventario P1');
+  assert.equal(sheet.getCell('C4').value, 'Flor que amanece de P2');
+  assert.deepEqual([rowFor('FREEDOM').getCell(2).value, rowFor('FREEDOM').getCell(3).value, rowFor('FREEDOM').getCell(4).value], [12, 0, 12]);
+  assert.deepEqual([rowFor('FREEDOM CORTO').getCell(2).value, rowFor('FREEDOM CORTO').getCell(3).value, rowFor('FREEDOM CORTO').getCell(4).value], [132, 111, 243]);
+  assert.deepEqual([rowFor('TOTAL FINCA').getCell(2).value, rowFor('TOTAL FINCA').getCell(3).value, rowFor('TOTAL FINCA').getCell(4).value], [144, 111, 255]);
+  assert.equal(workbook.getWorksheet('Total finca').getCell('C9').value, 255);
+});
+
+test('Excel total finca P2 suma granel y guarde por variedad y omite filas retiradas', async () => {
+  const farm = { id: 2, code: 'F2', name: 'Finca P2' };
+  const template = inventoryTemplate('p2', 'F2');
+  const data = blankInventory();
+  data.bulk['0:1'] = 2;
+  data.guard['0:2'] = 3;
+  data.guard['21:1'] = 8; // Fila retirada; no se cuenta.
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(await buildFarmInventoryWorkbook({ farm, year: 2026, month: 10,
+    summaries: [{ label: template.label, summary: inventoryMonthSummary(template, data, 2026, 10) }] }));
+  const sheet = workbook.getWorksheet('Por variedad');
+  assert.equal(sheet.getCell('B4').value, 'TOTAL TALLOS');
+  assert.equal(sheet.getCell('A5').value, 'FREEDOM CORTO');
+  assert.equal(sheet.getCell('B5').value, 125);
+  assert.equal(sheet.getCell('B6').value, 125);
+  assert.equal(workbook.getWorksheet('Total finca').getCell('C7').value, 125);
+});

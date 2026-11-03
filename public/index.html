@@ -247,6 +247,10 @@
             </div>
             <div id="inventorySections" class="inventory-tabs inventory-section-tabs" role="group" aria-label="Sección del inventario"></div>
             <div class="inventory-farm-summary"><div><span>TOTAL TALLOS DE TODOS LOS INVENTARIOS DE ESTA FINCA · MES SELECCIONADO</span><strong id="inventoryFarmTotal">0</strong><small id="inventoryFarmBreakdown"></small></div><button class="button secondary" id="inventoryFarmExport" type="button">↓ Excel total finca</button></div>
+            <details class="inventory-daily-total" id="inventoryDailyTotal">
+              <summary>Total de tallos del día <span id="inventoryDailyDate"></span><span class="inventory-daily-open">Ver total</span></summary>
+              <div class="inventory-daily-value"><strong id="inventoryDailyStems">—</strong><span>tallos de todos los inventarios de esta finca</span><small>FN no se incluye porque no tiene un día asignado.</small></div>
+            </details>
             <div id="inventoryMetrics" class="inventory-metrics"></div>
             <div id="inventoryEditor"></div>
           </section>
