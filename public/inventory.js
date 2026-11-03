@@ -98,10 +98,6 @@
     ui.save.textContent = model.dirty ? '✓ Guardar cambios' : model.saved ? '✓ Guardado' : '✓ Guardar inventario';
   }
 
-  function selectedInventoryDay() {
-    return model.section === 'processed' ? period().day : (model.gridDay || period().day);
-  }
-
   function localDailyStems(day) {
     if (!model.template || !model.data) return 0;
     let stems = 0;
@@ -124,8 +120,8 @@
   }
 
   function renderDailyStems() {
-    const day = selectedInventoryDay();
-    ui.dailyDate.textContent = `· día ${day}`;
+    const { year, month, day } = period();
+    ui.dailyDate.textContent = `· ${day}/${String(month).padStart(2, '0')}/${year}`;
     const farmName = document.querySelector('#farmSelect').selectedOptions[0]?.textContent || 'finca seleccionada';
     ui.dailyFarm.textContent = `tallos de todos los inventarios de ${farmName}`;
     if (!model.farmSummary) {
@@ -213,7 +209,7 @@
     const rows = model.template[section];
     const visibleRows = rows.map((item, row) => ({ item, row })).filter(({ item }) => !item.retired);
     const days = period().days;
-    if (!model.gridDay || model.gridDay > days) model.gridDay = period().day;
+    model.gridDay = period().day;
     const displayDays = section === 'bulk' ? 31 : days;
     const headers = Array.from({ length: displayDays }, (_, i) => `<th>${i + 1}</th>`).join('');
     const fnHeader = isBulk ? '<th class="inventory-fn-heading" title="Fin de corte: ingresar tallos, no tabacos">FN<small>TALLOS</small></th>' : '';
@@ -394,7 +390,14 @@
   ui.editor.addEventListener('change', (event) => {
     if (event.target.id === 'inventoryVariety') model.variety = Number(event.target.value);
     else if (event.target.id === 'inventoryProcess') model.process = event.target.value;
-    else if (event.target.id === 'inventoryGridDay') model.gridDay = Number(event.target.value);
+    else if (event.target.id === 'inventoryGridDay') {
+      const day = Number(event.target.value);
+      const { year, month, days } = period();
+      if (!Number.isInteger(day) || day < 1 || day > days) return;
+      model.date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      model.gridDay = day;
+      renderTabs();
+    }
     else return;
     renderEditor();
   });

@@ -244,6 +244,26 @@ test('total diario P2 suma granel y guarde y no cuenta FN ni filas retiradas', (
   assert.equal(result.dailyStems.reduce((sum, stems) => sum + stems, 0) + 11, result.stems);
 });
 
+test('día 28 suma 100 tallos de todos los inventarios P1 sin incluir otro día ni P2', () => {
+  const p1 = blankInventory();
+  p1.processed['28:0:E'] = 1; // 25 tallos en ramos.
+  p1.bulk['0:28'] = 1; // 25 tallos en granel.
+  p1.guard['0:28'] = 1; // 25 tallos en guarde.
+  p1.guard['0:27'] = 2; // Otro día: no debe sumarse al 28.
+  const p1FromP2 = blankInventory();
+  p1FromP2.bulk['0:28'] = 1; // 25 tallos en flor que amanece de P2.
+  const p2 = blankInventory();
+  p2.bulk['0:28'] = 2; // Otra finca: no debe sumarse a P1.
+  const own = inventoryMonthSummary(inventoryTemplate('p1', 'F1'), p1, 2026, 10);
+  const fromP2 = inventoryMonthSummary(inventoryTemplate('p1_p2', 'F1'), p1FromP2, 2026, 10);
+  const otherFarm = inventoryMonthSummary(inventoryTemplate('p2', 'F2'), p2, 2026, 10);
+  assert.equal(own.dailyStems[27], 75);
+  assert.equal(fromP2.dailyStems[27], 25);
+  assert.equal(own.dailyStems[27] + fromP2.dailyStems[27], 100);
+  assert.equal(own.dailyStems[26], 50);
+  assert.equal(otherFarm.dailyStems[27], 50);
+});
+
 test('valida finca, mes, día, variedad y columna antes de guardar', async () => {
   const template = inventoryTemplate('p2', 'F2');
   const legacyTemplate = { ...templates.p2 };
