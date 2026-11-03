@@ -4,6 +4,9 @@
     templates: document.querySelector('#inventoryTemplates'),
     sections: document.querySelector('#inventorySections'),
     date: document.querySelector('#inventoryDate'),
+    dateCaption: document.querySelector('#inventoryDateCaption'),
+    day: document.querySelector('#inventoryDay'),
+    dayLabel: document.querySelector('#inventoryDayLabel'),
     metrics: document.querySelector('#inventoryMetrics'),
     editor: document.querySelector('#inventoryEditor'),
     save: document.querySelector('#inventorySave'),
@@ -31,8 +34,10 @@
   }
 
   function period() {
-    const [year, month, day] = model.date.split('-').map(Number);
-    return { year, month, day, days: new Date(year, month, 0).getDate() };
+    const [year, month, calendarDay] = model.date.split('-').map(Number);
+    const extended = model.key === 'p2' || year * 100 + month >= 202612;
+    return { year, month, day: extended ? (model.gridDay || calendarDay) : calendarDay,
+      days: extended ? 31 : new Date(year, month, 0).getDate(), extended };
   }
 
   function format(value) { return new Intl.NumberFormat('es-CO').format(value || 0); }
@@ -160,7 +165,13 @@
     ui.templates.innerHTML = model.templates.map((item) => `<button type="button" data-template="${item.key}" class="${item.key === model.key ? 'active' : ''}">${escapeHtml(item.label)}</button>`).join('');
     const available = model.template?.sections || Object.keys(sectionNames);
     ui.sections.innerHTML = available.map((key) => `<button type="button" data-inventory-section="${key}" class="${key === model.section ? 'active' : ''}">${sectionNames[key]}</button>`).join('');
-    ui.date.value = model.date;
+    const { extended, day } = period();
+    ui.date.type = extended ? 'month' : 'date';
+    ui.date.value = extended ? model.date.slice(0, 7) : model.date;
+    ui.dateCaption.textContent = extended ? 'Mes del inventario' : 'Fecha del inventario';
+    ui.dayLabel.hidden = !extended;
+    if (extended) ui.day.innerHTML = Array.from({ length: 31 }, (_, index) =>
+      `<option value="${index + 1}" ${index + 1 === day ? 'selected' : ''}>Día ${index + 1}</option>`).join('');
   }
 
   function processedEditor(result) {
@@ -217,7 +228,7 @@
     const fnMobile = isBulk ? `<div class="inventory-fn-mobile"><h3>FN · Fin de corte</h3><p>Ingresa tallos directamente. No se multiplican por tallos/${factorUnit}.</p>${visibleRows.map(({ item, row }) => `<div class="inventory-fn-mobile-row"><strong>${escapeHtml(item.name)}</strong>${input(section, row, 'FN', `${item.name} FN fin de corte en tallos`)}</div>`).join('')}</div>` : '';
     return `<div class="inventory-note">Mes de ${new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric' }).format(new Date(period().year, period().month - 1, 1))}. Cada columna diaria registra ${unit}; total tallos = ${unit} × tallos por ${factorUnit}${isBulk ? ' + FN. FN (fin de corte) registra tallos directos.' : '.'}</div>
       <div class="inventory-table-scroll"><table class="inventory-table inventory-grid-table"><thead><tr><th class="inventory-identity">VARIEDAD</th>${headers}${fnHeader}<th>TOTAL ${unit.toUpperCase()}</th><th>TOTAL TALLOS</th></tr></thead><tbody>${desktopRows}</tbody><tfoot><tr><th class="inventory-identity">TOTAL</th>${dayTotals}${isBulk ? `<td class="inventory-total inventory-fn-total" data-all-fn>${format(result.totals.fnStems)}</td>` : ''}<td class="inventory-total" data-all-units>${format(result.totals.units)}</td><td class="inventory-total" data-all-stems>${format(result.totals.stems)}</td></tr></tfoot></table></div>
-      <div class="inventory-mobile-capture"><label>Día del mes<select id="inventoryGridDay">${Array.from({ length: days }, (_, i) => `<option value="${i + 1}" ${i + 1 === model.gridDay ? 'selected' : ''}>Día ${i + 1}</option>`).join('')}</select></label><div class="inventory-mobile-head"><span>VARIEDAD</span><span>${unit.toUpperCase()}</span><span>TALLOS MES</span></div>${mobileRows}${fnMobile}</div>`;
+      <div class="inventory-mobile-capture">${period().extended ? '' : `<label>Día del mes<select id="inventoryGridDay">${Array.from({ length: days }, (_, i) => `<option value="${i + 1}" ${i + 1 === model.gridDay ? 'selected' : ''}>Día ${i + 1}</option>`).join('')}</select></label>`}<div class="inventory-mobile-head"><span>VARIEDAD</span><span>${unit.toUpperCase()}</span><span>TALLOS MES</span></div>${mobileRows}${fnMobile}</div>`;
   }
 
   function renderEditor() {
@@ -247,6 +258,10 @@
     const { year, month } = period();
     ui.editor.innerHTML = '<p class="inventory-note">Cargando inventario…</p>';
     try {
+      if (window.authApp?.canEdit('inventory')) {
+        const initialized = await api(`/api/inventory/initialize/${model.farmId}/${year}/${month}`, { method: 'POST' });
+        if (initialized.copied.length) showToast(`Inventario del mes anterior copiado al nuevo mes.`);
+      }
       const response = await api(`/api/inventory/${model.farmId}/${model.key}/${year}/${month}`);
       model.template = response.template;
       model.data = response.data;
@@ -373,18 +388,24 @@
   });
   ui.date.addEventListener('change', async () => {
     const oldDate = model.date;
-    const nextDate = ui.date.value;
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(nextDate)) { ui.date.value = oldDate; return; }
+    const nextDate = ui.date.type === 'month' ? `${ui.date.value}-01` : ui.date.value;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(nextDate)) { renderTabs(); return; }
     const oldMonth = oldDate.slice(0, 7);
     const nextMonth = nextDate.slice(0, 7);
     if (oldMonth !== nextMonth && !(await autosave.flush())) {
-      ui.date.value = oldDate; return;
+      model.date = oldDate; renderTabs(); return;
     }
     model.date = nextDate;
-    model.gridDay = period().day;
+    model.gridDay = Number(nextDate.slice(8));
     if (oldMonth !== nextMonth) { model.farmSummary = null; model.captureTotal = null; }
     if (oldMonth !== nextMonth) await loadTemplate();
     else renderEditor();
+  });
+  ui.day.addEventListener('change', () => {
+    const day = Number(ui.day.value);
+    if (!period().extended || !Number.isInteger(day) || day < 1 || day > 31) return;
+    model.gridDay = day;
+    renderEditor();
   });
   ui.captureDate.addEventListener('change', () => {
     const nextDate = ui.captureDate.value;

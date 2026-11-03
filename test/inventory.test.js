@@ -1,7 +1,50 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { templates, inventoryTemplate, blankInventory, normalizeInventory, inventorySummary, inventoryMonthSummary } = require('../src/inventory');
+const { templates, inventoryTemplate, blankInventory, inventoryDays, normalizeInventory, inventorySummary, inventoryMonthSummary } = require('../src/inventory');
 const db = require('../src/db');
+
+test('P2 usa 31 posiciones desde ahora y P1 las activa en diciembre de 2026', () => {
+  const p1 = inventoryTemplate('p1', 'F1');
+  const p2 = inventoryTemplate('p2', 'F2');
+  assert.equal(inventoryDays(p1, 2026, 11), 30);
+  assert.equal(inventoryDays(p1, 2026, 12), 31);
+  assert.equal(inventoryDays(p1, 2027, 2), 31);
+  assert.equal(inventoryDays(p2, 2026, 11), 31);
+  assert.equal(inventoryDays(p2, 2027, 2), 31);
+  assert.throws(() => normalizeInventory(p1, 2026, 11, { bulk: { '0:31': 1 } }));
+  assert.equal(normalizeInventory(p1, 2026, 12, { processed: { '31:0:B': 2 } }).processed['31:0:B'], 2);
+  assert.equal(normalizeInventory(p2, 2027, 2, { guard: { '0:31': 3 } }).guard['0:31'], 3);
+  const february = inventoryMonthSummary(p2, { bulk: { '0:31': 2 }, guard: {} }, 2027, 2);
+  assert.equal(february.dailyStems.length, 31);
+  assert.equal(february.dailyStems[30], 2 * p2.bulk[0].stemsPerBunch);
+});
+
+test('el mes nuevo copia las mismas casillas 1 a 31 y FN en todos los inventarios de la finca', async () => {
+  const p2 = inventoryTemplate('p2', 'F2');
+  const data = { bulk: { '0:1': 2, '0:31': 3, '0:FN': 11 }, guard: { '0:31': 4 } };
+  await db.saveInventory(2, 'p2', p2, 2047, 1, data);
+  const inherited = await db.getInventory(2, 'p2', 2047, 2);
+  assert.equal(inherited.saved, false);
+  assert.equal(inherited.carriedFrom, '2047-01');
+  assert.deepEqual(inherited.data.bulk, data.bulk);
+  assert.deepEqual(inherited.data.guard, data.guard);
+  assert.deepEqual(await db.initializeInventoryMonth(2, 'F2', 2047, 2), [{ key: 'p2', from: '2047-01' }]);
+  assert.deepEqual((await db.getInventory(2, 'p2', 2047, 2)).data.bulk, data.bulk);
+  assert.deepEqual((await db.getInventory(2, 'p2', 2047, 2)).data.guard, data.guard);
+  assert.deepEqual(await db.initializeInventoryMonth(2, 'F2', 2047, 2), []);
+
+  const p1 = inventoryTemplate('p1', 'F1');
+  const transfer = inventoryTemplate('p1_p2', 'F1');
+  const own = { processed: { '30:0:B': 2 }, bulk: { '0:30': 1, '0:FN': 5 }, guard: { '0:30': 2 } };
+  const p2Flower = { bulk: { '0:30': 4 } };
+  await db.saveInventory(1, 'p1', p1, 2026, 11, own);
+  await db.saveInventory(1, 'p1_p2', transfer, 2026, 11, p2Flower);
+  assert.deepEqual((await db.getInventory(1, 'p1', 2026, 10)).data, blankInventory());
+  assert.deepEqual(await db.initializeInventoryMonth(1, 'F1', 2026, 12),
+    [{ key: 'p1', from: '2026-11' }, { key: 'p1_p2', from: '2026-11' }]);
+  assert.deepEqual((await db.getInventory(1, 'p1', 2026, 12)).data, own);
+  assert.deepEqual((await db.getInventory(1, 'p1_p2', 2026, 12)).data.bulk, p2Flower.bulk);
+});
 
 test('estado diario conserva el total con que quedó el inventario de cada finca', async () => {
   const p1 = inventoryTemplate('p1', 'F1');
@@ -298,7 +341,7 @@ test('valida finca, mes, día, variedad y columna antes de guardar', async () =>
   const template = inventoryTemplate('p2', 'F2');
   const legacyTemplate = { ...templates.p2 };
   delete legacyTemplate.sections;
-  assert.throws(() => normalizeInventory(legacyTemplate, 2026, 2, { processed: { '30:0:B': 1 } }));
+  assert.throws(() => normalizeInventory(legacyTemplate, 2026, 2, { processed: { '32:0:B': 1 } }));
   assert.throws(() => normalizeInventory(legacyTemplate, 2026, 10, { processed: { '1:0:ZZ': 1 } }));
   assert.throws(() => normalizeInventory(template, 2026, 10, { bulk: { '999:1': 1 } }));
   assert.throws(() => normalizeInventory(template, 2026, 10, { guard: { '0:FN': 1 } }));

@@ -25,9 +25,18 @@ function availableSections(template) {
   return template.sections || ['processed', 'bulk', 'guard'];
 }
 
+function inventoryDays(template, year, month) {
+  return template.farmCode === 'F2' || year * 100 + month >= 202612
+    ? 31 : new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+function inventoryCarriesOver(template, year, month) {
+  return template.farmCode === 'F2' || year * 100 + month >= 202612;
+}
+
 function normalizeInventory(template, year, month, input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Inventario inválido');
-  const maxDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const maxDay = inventoryDays(template, year, month);
   const result = Object.fromEntries(availableSections(template).map((section) => [section, {}]));
   for (const section of availableSections(template)) {
     const entries = input[section] || {};
@@ -100,7 +109,7 @@ function inventorySummary(template, data, section, selectedDay) {
 function inventoryMonthSummary(template, data, year, month) {
   const normalized = normalizeInventory(template, year, month, data);
   const sections = availableSections(template);
-  const days = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const days = inventoryDays(template, year, month);
   const byVariety = new Map();
   const dailyStems = Array(days).fill(0);
   const bySection = Object.fromEntries(sections.map((section) => {
@@ -138,4 +147,4 @@ function inventoryMonthSummary(template, data, year, month) {
   };
 }
 
-module.exports = { templates, inventoryTemplate, blankInventory, availableSections, normalizeInventory, inventorySummary, inventoryMonthSummary };
+module.exports = { templates, inventoryTemplate, blankInventory, availableSections, inventoryDays, inventoryCarriesOver, normalizeInventory, inventorySummary, inventoryMonthSummary };

@@ -83,7 +83,6 @@ function addInventorySection(workbook, farm, period, template, data, section, ye
       ? ['DÍA', 'VARIEDAD', 'LÁMINA', 'GRADO', 'UNIDADES', 'TALLOS / UNIDAD', 'TALLOS']
       : ['DÍA', 'VARIEDAD', 'TABACOS', 'TALLOS / TABACO', 'TALLOS']);
   sheet.getColumn(2).width = 27;
-  const days = new Date(Date.UTC(year, month, 0)).getUTCDate();
   if (section === 'processed') {
     sheet.getColumn(3).width = 23;
     for (const [key, value] of Object.entries(data.processed || {})) {

@@ -136,6 +136,12 @@ app.get('/api/inventory/snapshot/:farmId/:year/:month/:date', auth.requireRole('
   res.json(await db.getInventorySnapshot(farm.id, year, month, date));
 }));
 
+app.post('/api/inventory/initialize/:farmId/:year/:month', auth.requireRole('postharvest'), asyncRoute(async (req, res) => {
+  const farm = await farmById(validateFarmId(req.params.farmId));
+  const { year, month } = validateInventoryPeriod(req.params.year, req.params.month);
+  res.json({ copied: await db.initializeInventoryMonth(farm.id, farm.code, year, month) });
+}));
+
 app.get('/api/inventory/:farmId/:templateKey/:year/:month', auth.requireRole('postharvest', 'viewer'), asyncRoute(async (req, res) => {
   const farmId = validateFarmId(req.params.farmId);
   const { year, month } = validateInventoryPeriod(req.params.year, req.params.month);

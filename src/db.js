@@ -1,7 +1,7 @@
 const { Pool } = require('pg');
 const { defaultRecordsForFarm, templateRowsForFarm, P1_ROWS, P1_WEEKLY_TARGETS } = require('./defaults');
 const { blankFieldData, normalizeFieldData } = require('./field-data');
-const { templates, inventoryTemplate, blankInventory, normalizeInventory, inventoryMonthSummary } = require('./inventory');
+const { templates, inventoryTemplate, inventoryCarriesOver, blankInventory, normalizeInventory, inventoryMonthSummary } = require('./inventory');
 
 const connectionString = process.env.DATABASE_URL;
 const pool = connectionString
@@ -177,15 +177,51 @@ async function saveFieldData(farmId, year, week, input) {
 
 async function getInventory(farmId, templateKey, year, month) {
   const key = `${farmId}:${templateKey}:${year}:${month}`;
+  const canCarry = templates[templateKey] && inventoryCarriesOver(templates[templateKey], year, month);
   if (!pool) {
     const data = memory.inventoryMonths.get(key);
-    return { data: data || blankInventory(), saved: Boolean(data) };
+    if (data) return { data, saved: true };
+    if (canCarry) {
+      const prefix = `${farmId}:${templateKey}:`;
+      const previous = [...memory.inventoryMonths.entries()]
+        .filter(([savedKey]) => savedKey.startsWith(prefix))
+        .map(([savedKey, payload]) => {
+          const [savedYear, savedMonth] = savedKey.slice(prefix.length).split(':').map(Number);
+          return { savedYear, savedMonth, payload };
+        })
+        .filter((item) => item.savedYear * 12 + item.savedMonth < year * 12 + month)
+        .sort((left, right) => right.savedYear * 12 + right.savedMonth - left.savedYear * 12 - left.savedMonth)[0];
+      if (previous) return { data: previous.payload, saved: false, carriedFrom: `${previous.savedYear}-${String(previous.savedMonth).padStart(2, '0')}` };
+    }
+    return { data: blankInventory(), saved: false };
   }
   const { rows } = await pool.query(
     'SELECT payload FROM monthly_inventories WHERE farm_id = $1 AND template_key = $2 AND inventory_year = $3 AND inventory_month = $4',
     [farmId, templateKey, year, month],
   );
-  return { data: rows.length ? rows[0].payload : blankInventory(), saved: rows.length > 0 };
+  if (rows.length) return { data: rows[0].payload, saved: true };
+  if (canCarry) {
+    const previous = await pool.query(`
+      SELECT payload, inventory_year, inventory_month FROM monthly_inventories
+      WHERE farm_id = $1 AND template_key = $2
+        AND (inventory_year < $3 OR (inventory_year = $3 AND inventory_month < $4))
+      ORDER BY inventory_year DESC, inventory_month DESC LIMIT 1
+    `, [farmId, templateKey, year, month]);
+    if (previous.rows.length) {
+      const item = previous.rows[0];
+      return { data: item.payload, saved: false,
+        carriedFrom: `${item.inventory_year}-${String(item.inventory_month).padStart(2, '0')}` };
+    }
+  }
+  return { data: blankInventory(), saved: false };
+}
+
+async function completeInventorySnapshot(farmId, farmCode, year, month, saved) {
+  for (const [key, source] of Object.entries(templates)) {
+    if (source.farmCode !== farmCode || saved.has(key)) continue;
+    saved.set(key, (await getInventory(farmId, key, year, month)).data);
+  }
+  return inventorySnapshot(farmId, farmCode, year, month, saved);
 }
 
 function inventorySnapshot(farmId, farmCode, year, month, savedInventories) {
@@ -214,7 +250,7 @@ async function saveInventory(farmId, templateKey, template, year, month, input, 
       if (value) saved.set(inventoryKey, value);
     }
     memory.inventorySnapshots.set(`${farmId}:${year}:${month}:${snapshotDate}`,
-      inventorySnapshot(farmId, farmCode, year, month, saved));
+      await completeInventorySnapshot(farmId, farmCode, year, month, saved));
   } else {
     const client = await pool.connect();
     try {
@@ -237,7 +273,7 @@ async function saveInventory(farmId, templateKey, template, year, month, input, 
         [farmId, year, month],
       );
       const saved = new Map(all.rows.map((row) => [row.template_key, row.payload]));
-      const snapshot = inventorySnapshot(farmId, farmCode, year, month, saved);
+      const snapshot = await completeInventorySnapshot(farmId, farmCode, year, month, saved);
       await client.query(`
         INSERT INTO inventory_daily_snapshots (farm_id, inventory_year, inventory_month, snapshot_date, payload)
         VALUES ($1, $2, $3, $4::date, $5::jsonb)
@@ -270,6 +306,18 @@ async function getInventorySnapshot(farmId, year, month, snapshotDate) {
   }
   return { farmId: Number(farmId), year, month, snapshotDate, saved: Boolean(snapshot),
     inventories: snapshot?.inventories || [], totalStems: snapshot?.totalStems ?? null };
+}
+
+async function initializeInventoryMonth(farmId, farmCode, year, month) {
+  const copied = [];
+  for (const [key, source] of Object.entries(templates)) {
+    if (source.farmCode !== farmCode) continue;
+    const previous = await getInventory(farmId, key, year, month);
+    if (!previous.carriedFrom) continue;
+    await saveInventory(farmId, key, inventoryTemplate(key, farmCode), year, month, previous.data);
+    copied.push({ key, from: previous.carriedFrom });
+  }
+  return copied;
 }
 
 async function getWeekWithDefaults(farmId, year, week) {
@@ -440,4 +488,4 @@ async function health() {
   return { database: 'postgresql', persistent: true };
 }
 
-module.exports = { migrate, getFarms, getWeek, getWeekWithDefaults, replaceWeek, getHistory, getFieldData, saveFieldData, getInventory, saveInventory, getInventorySnapshot, health };
+module.exports = { migrate, getFarms, getWeek, getWeekWithDefaults, replaceWeek, getHistory, getFieldData, saveFieldData, getInventory, saveInventory, initializeInventoryMonth, getInventorySnapshot, health };
