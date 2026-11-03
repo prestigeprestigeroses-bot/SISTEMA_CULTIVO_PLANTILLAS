@@ -1,4 +1,5 @@
 const ExcelJS = require('exceljs');
+const calculateProductionTotals = require('../public/production-totals');
 
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const DAY_COLORS = [
@@ -152,17 +153,19 @@ async function buildProjectionWorkbook({ farm, year, week, records }) {
   let rowNumber = 5;
   let currentProduction = null;
   let groupStart = null;
-  const addSummary = (label, groupRecords) => {
+  const addSummary = (label, groupRecords, category = 'total') => {
+    const values = calculateProductionTotals(groupRecords)[category];
     const row = sheet.getRow(rowNumber);
     row.getCell(1).value = label;
     sheet.mergeCells(rowNumber, 1, rowNumber, 2);
     for (let day = 0; day < 7; day += 1) {
-      row.getCell(3 + day * 2).value = groupRecords.reduce((sum, record) => sum + Number(record.days[day].projected || 0), 0);
-      row.getCell(4 + day * 2).value = groupRecords.reduce((sum, record) => sum + Number(record.days[day].actual || 0), 0);
+      row.getCell(3 + day * 2).value = values.days[day].projected;
+      row.getCell(4 + day * 2).value = values.days[day].actual;
     }
-    row.getCell(17).value = groupRecords.reduce((sum, record) => sum + sumRecord(record, 'projected'), 0);
-    row.getCell(18).value = groupRecords.reduce((sum, record) => sum + sumRecord(record, 'actual'), 0);
-    row.getCell(19).value = groupRecords.reduce((sum, record) => sum + Number(record.arrangements || 0), 0);
+    row.getCell(17).value = values.projected;
+    row.getCell(18).value = values.actual;
+    row.getCell(19).value = category === 'total'
+      ? groupRecords.reduce((sum, record) => sum + Number(record.arrangements || 0), 0) : null;
     row.height = 24;
     row.eachCell({ includeEmpty: true }, (cell) => {
       cell.font = { bold: true, color: { argb: label === 'TOTAL SEMANA' ? 'FFFFFFFF' : 'FF274C39' } };
@@ -229,6 +232,8 @@ async function buildProjectionWorkbook({ farm, year, week, records }) {
   if (['F1', 'F2'].includes(farm.code) && currentProduction !== null) {
     addSummary(`TOTAL PRODUCCIÓN ${currentProduction}`, records.slice(groupStart));
   }
+  addSummary('TOTAL ROJO · FREEDOM', records, 'red');
+  addSummary('TOTAL COLOR · OTRAS VARIEDADES', records, 'color');
   addSummary('TOTAL SEMANA', records);
 
   if (farm.code === 'F1') addP1ArrangementSummary(workbook, records);
