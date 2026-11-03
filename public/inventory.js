@@ -13,6 +13,8 @@
     farmBreakdown: document.querySelector('#inventoryFarmBreakdown'),
     dailyDate: document.querySelector('#inventoryDailyDate'),
     dailyStems: document.querySelector('#inventoryDailyStems'),
+    dailyFarm: document.querySelector('#inventoryDailyFarm'),
+    dailyBreakdown: document.querySelector('#inventoryDailyBreakdown'),
   };
   const sectionNames = { processed: 'Inventario ramos', bulk: 'Flor a granel', guard: 'Flor de guarde' };
   const model = {
@@ -124,12 +126,20 @@
   function renderDailyStems() {
     const day = selectedInventoryDay();
     ui.dailyDate.textContent = `· día ${day}`;
-    if (!model.farmSummary) { ui.dailyStems.textContent = '—'; return; }
+    const farmName = document.querySelector('#farmSelect').selectedOptions[0]?.textContent || 'finca seleccionada';
+    ui.dailyFarm.textContent = `tallos de todos los inventarios de ${farmName}`;
+    if (!model.farmSummary) {
+      ui.dailyStems.textContent = '—';
+      ui.dailyBreakdown.textContent = '';
+      return;
+    }
     const inventories = model.farmSummary.inventories;
-    const stored = inventories.reduce((sum, item) => sum + (item.summary.dailyStems?.[day - 1] || 0), 0);
-    const current = inventories.find((item) => item.key === model.key);
-    const currentStored = current?.summary.dailyStems?.[day - 1] || 0;
-    ui.dailyStems.textContent = format(stored - currentStored + localDailyStems(day));
+    const contributions = inventories.map((item) => ({
+      label: item.label,
+      stems: item.key === model.key ? localDailyStems(day) : (item.summary.dailyStems?.[day - 1] || 0),
+    }));
+    ui.dailyStems.textContent = format(contributions.reduce((sum, item) => sum + item.stems, 0));
+    ui.dailyBreakdown.textContent = contributions.map((item) => `${item.label}: ${format(item.stems)}`).join(' · ');
   }
 
   async function loadFarmSummary() {
