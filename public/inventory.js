@@ -15,12 +15,13 @@
     dailyStems: document.querySelector('#inventoryDailyStems'),
     dailyFarm: document.querySelector('#inventoryDailyFarm'),
     dailyBreakdown: document.querySelector('#inventoryDailyBreakdown'),
+    captureDate: document.querySelector('#inventoryCaptureDate'),
   };
   const sectionNames = { processed: 'Inventario ramos', bulk: 'Flor a granel', guard: 'Flor de guarde' };
   const model = {
     farmId: null, templates: [], key: null, template: null, data: null,
     section: 'processed', date: localDate(), variety: 0, process: null, gridDay: null,
-    dirty: false, saved: false, farmSummary: null,
+    dirty: false, saved: false, farmSummary: null, captureDate: localDate(), captureTotal: null,
   };
 
   function localDate() {
@@ -98,44 +99,41 @@
     ui.save.textContent = model.dirty ? '✓ Guardar cambios' : model.saved ? '✓ Guardado' : '✓ Guardar inventario';
   }
 
-  function localDailyStems(day) {
-    if (!model.template || !model.data) return 0;
-    let stems = 0;
-    for (const section of model.template.sections || ['processed', 'bulk', 'guard']) {
-      if (section === 'processed') {
-        model.template.processed.varieties.forEach((_, index) => {
-          for (const column of model.template.processed.columns) {
-            if (column.stems !== null) stems += (model.data.processed[`${day}:${index}:${column.key}`] || 0) * column.stems;
-          }
-        });
-      } else {
-        model.template[section].forEach((item, index) => {
-          if (!item.retired && item.stemsPerBunch !== null) {
-            stems += (model.data[section][`${index}:${day}`] || 0) * item.stemsPerBunch;
-          }
-        });
-      }
-    }
-    return stems;
-  }
-
   function renderDailyStems() {
-    const { year, month, day } = period();
+    const [year, month, day] = model.captureDate.split('-').map(Number);
     ui.dailyDate.textContent = `· ${day}/${String(month).padStart(2, '0')}/${year}`;
+    ui.captureDate.value = model.captureDate;
     const farmName = document.querySelector('#farmSelect').selectedOptions[0]?.textContent || 'finca seleccionada';
-    ui.dailyFarm.textContent = `tallos de todos los inventarios de ${farmName}`;
-    if (!model.farmSummary) {
+    const inventoryMonth = new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric' })
+      .format(new Date(period().year, period().month - 1, 1));
+    ui.dailyFarm.textContent = `tallos de todos los inventarios de ${farmName} · ${inventoryMonth}`;
+    if (!model.captureTotal?.saved) {
       ui.dailyStems.textContent = '—';
-      ui.dailyBreakdown.textContent = '';
+      ui.dailyBreakdown.textContent = model.captureTotal ? 'No hay un estado guardado para esa fecha.' : '';
       return;
     }
-    const inventories = model.farmSummary.inventories;
-    const contributions = inventories.map((item) => ({
-      label: item.label,
-      stems: item.key === model.key ? localDailyStems(day) : (item.summary.dailyStems?.[day - 1] || 0),
-    }));
-    ui.dailyStems.textContent = format(contributions.reduce((sum, item) => sum + item.stems, 0));
+    const contributions = model.templates.map((item) => ({ label: item.label,
+      stems: model.captureTotal.inventories.find((entry) => entry.key === item.key)?.stems || 0 }));
+    ui.dailyStems.textContent = format(model.captureTotal.totalStems);
     ui.dailyBreakdown.textContent = contributions.map((item) => `${item.label}: ${format(item.stems)}`).join(' · ');
+  }
+
+  async function loadDailyStems() {
+    if (!model.farmId) return;
+    const farmId = model.farmId;
+    const date = model.captureDate;
+    const { year, month } = period();
+    try {
+      const result = await api(`/api/inventory/snapshot/${farmId}/${year}/${month}/${date}`, { cache: 'no-store' });
+      if (farmId !== model.farmId || date !== model.captureDate || year !== period().year || month !== period().month) return;
+      model.captureTotal = result;
+      renderDailyStems();
+    } catch (error) {
+      if (farmId !== model.farmId || date !== model.captureDate || year !== period().year || month !== period().month) return;
+      model.captureTotal = null;
+      ui.dailyBreakdown.textContent = error.message;
+      ui.dailyStems.textContent = '—';
+    }
   }
 
   async function loadFarmSummary() {
@@ -261,7 +259,7 @@
       renderTabs();
       renderEditor();
       renderSaveState();
-      await loadFarmSummary();
+      await Promise.all([loadFarmSummary(), loadDailyStems()]);
     } catch (error) {
       ui.editor.innerHTML = `<p class="field-error">${escapeHtml(error.message)}</p>`;
       showToast(error.message, 'error');
@@ -276,6 +274,7 @@
     model.template = null;
     model.data = null;
     model.farmSummary = null;
+    model.captureTotal = null;
     renderDailyStems();
     try {
       model.templates = await api(`/api/inventory/templates/${farmId}`);
@@ -310,7 +309,7 @@
         model.dirty = false;
       }
       renderSaveState();
-      if (isCurrent()) await loadFarmSummary();
+      if (isCurrent()) await Promise.all([loadFarmSummary(), loadDailyStems()]);
       return true;
     } catch (error) { showToast(error.message, 'error'); return false; }
     finally { ui.save.disabled = false; renderMetrics(); }
@@ -346,7 +345,7 @@
       const nextTable = ui.editor.querySelector('.inventory-table-scroll');
       if (tablePosition && nextTable) nextTable.scrollTo(tablePosition.left, tablePosition.top);
     }
-    await loadFarmSummary();
+    await Promise.all([loadFarmSummary(), loadDailyStems()]);
   }
 
   async function save() {
@@ -383,9 +382,17 @@
     }
     model.date = nextDate;
     model.gridDay = period().day;
-    if (oldMonth !== nextMonth) model.farmSummary = null;
+    if (oldMonth !== nextMonth) { model.farmSummary = null; model.captureTotal = null; }
     if (oldMonth !== nextMonth) await loadTemplate();
     else renderEditor();
+  });
+  ui.captureDate.addEventListener('change', () => {
+    const nextDate = ui.captureDate.value;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(nextDate)) { ui.captureDate.value = model.captureDate; return; }
+    model.captureDate = nextDate;
+    model.captureTotal = null;
+    renderDailyStems();
+    loadDailyStems();
   });
   ui.editor.addEventListener('change', (event) => {
     if (event.target.id === 'inventoryVariety') model.variety = Number(event.target.value);

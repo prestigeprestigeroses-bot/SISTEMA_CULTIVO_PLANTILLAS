@@ -22,6 +22,7 @@ Sistema web para registrar la proyección y producción real de flor de dos finc
 - Consumo de P1 calculado como lectura final menos lectura inicial; consumo de P2 como goteo más cacho. El consumo acumulado en litros por cama usa el consumo m³ × 1000 / número de camas.
 - Exportación `.xlsx` de proyección, temperatura, registro hídrico, cada inventario y total mensual de inventarios por finca.
 - Total mensual de tallos por finca en Poscosecha, sumando inventario ramos, granel, guarde y FN de todos los inventarios disponibles para esa finca.
+- Estado diario de tallos en Poscosecha: cada guardado conserva una copia del total con el que quedó el inventario mensual de la finca ese día, sumando todas sus plantillas y FN. Al consultar una fecha se muestra el último estado guardado hasta ese día, sin sumar cambios ni usar la columna del día de la planilla. La fecha del guardado se calcula en `America/Bogota` o en la zona configurada con `INVENTORY_TIME_ZONE`. No se pueden reconstruir estados anteriores al primer guardado con esta función.
 - Persistencia PostgreSQL y migración automática al iniciar.
 - Modo temporal en memoria cuando no existe `DATABASE_URL`, útil para revisar la interfaz localmente.
 - Configuración de salud y despliegue para Railway.

@@ -3,6 +3,36 @@ const assert = require('node:assert/strict');
 const { templates, inventoryTemplate, blankInventory, normalizeInventory, inventorySummary, inventoryMonthSummary } = require('../src/inventory');
 const db = require('../src/db');
 
+test('estado diario conserva el total con que quedó el inventario de cada finca', async () => {
+  const p1 = inventoryTemplate('p1', 'F1');
+  const transfer = inventoryTemplate('p1_p2', 'F1');
+  const p2 = inventoryTemplate('p2', 'F2');
+  const entered = new Date('2045-07-28T15:00:00Z');
+  const later = new Date('2045-07-29T15:00:00Z');
+  const own = blankInventory();
+  own.processed['1:0:B'] = 2; // 12 tallos, aunque la columna sea del día 1.
+  own.bulk['0:FN'] = 7; // FN son tallos directos.
+  own.guard['0:3'] = 1;
+  await db.saveInventory(1, 'p1', p1, 2045, 7, own, entered);
+  const transferData = { bulk: { '0:15': 2 } };
+  await db.saveInventory(1, 'p1_p2', transfer, 2045, 7, transferData, entered);
+  const p2Data = { bulk: { '0:2': 1 }, guard: {} };
+  await db.saveInventory(2, 'p2', p2, 2045, 7, p2Data, entered);
+  const ownStems = inventoryMonthSummary(p1, own, 2045, 7).stems;
+  const transferStems = inventoryMonthSummary(transfer, transferData, 2045, 7).stems;
+  const p2Stems = inventoryMonthSummary(p2, p2Data, 2045, 7).stems;
+  assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-27')).saved, false);
+  assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-28')).totalStems, ownStems + transferStems);
+  assert.equal((await db.getInventorySnapshot(2, 2045, 7, '2045-07-28')).totalStems, p2Stems);
+  await db.saveInventory(1, 'p1', p1, 2045, 7, own, entered);
+  assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-28')).totalStems, ownStems + transferStems);
+  own.processed['1:0:B'] = 3;
+  await db.saveInventory(1, 'p1', p1, 2045, 7, own, later);
+  assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-29')).totalStems, ownStems + transferStems + 6);
+  assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-28')).totalStems, ownStems + transferStems);
+  assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-30')).totalStems, ownStems + transferStems + 6);
+});
+
 test('P1 ofrece dos inventarios, pero flor que amanece de P2 solo tiene granel', () => {
   assert.deepEqual(Object.keys(templates).filter((key) => templates[key].farmCode === 'F1'), ['p1', 'p1_p2']);
   assert.deepEqual(Object.keys(templates).filter((key) => templates[key].farmCode === 'F2'), ['p2']);

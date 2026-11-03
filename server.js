@@ -125,6 +125,17 @@ app.get('/api/inventory/summary/:farmId/:year/:month', auth.requireRole('posthar
   res.json(await farmInventorySummary(farm, year, month));
 }));
 
+app.get('/api/inventory/snapshot/:farmId/:year/:month/:date', auth.requireRole('postharvest', 'viewer'), asyncRoute(async (req, res) => {
+  const farm = await farmById(validateFarmId(req.params.farmId));
+  const { year, month } = validateInventoryPeriod(req.params.year, req.params.month);
+  const date = req.params.date;
+  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(date) ? new Date(`${date}T00:00:00Z`) : null;
+  if (!parsed || Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) {
+    throw new Error('Fecha de registro inválida');
+  }
+  res.json(await db.getInventorySnapshot(farm.id, year, month, date));
+}));
+
 app.get('/api/inventory/:farmId/:templateKey/:year/:month', auth.requireRole('postharvest', 'viewer'), asyncRoute(async (req, res) => {
   const farmId = validateFarmId(req.params.farmId);
   const { year, month } = validateInventoryPeriod(req.params.year, req.params.month);
