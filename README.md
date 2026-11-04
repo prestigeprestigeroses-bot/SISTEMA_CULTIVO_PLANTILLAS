@@ -69,6 +69,8 @@ En **Poscosecha**, elige la finca, el tipo de inventario y la fecha. P2 muestra 
 
 En **Flor a granel**, la columna **FN** (fin de corte) aparece después del día 31. Sus cantidades son tallos directos: se suman a **Total tallos** sin multiplicarse por el factor de tallos por tabaco ni aumentar **Total tabacos**. En celular, FN tiene una sección propia debajo de la captura diaria.
 
+En celular, **Ver mes completo** abre una tabla de solo lectura con todos los días del inventario, las variedades, FN cuando aplica y los totales. La tabla se desplaza horizontalmente y mantiene visible la variedad; **Captura por día** regresa a la edición. En inventario ramos, la vista mensual muestra tallos convertidos por variedad y día.
+
 El día seleccionado se resalta en la planilla. En celular, el selector muestra las cantidades ingresadas para ese día. FN permanece en su propia columna porque no tiene día de la plantilla.
 
 El total de tallos de la finca corresponde al **mes seleccionado** y suma los tallos convertibles registrados en todas sus plantillas de inventario. P1 incluye su inventario propio y «Flor que amanece de P2»; P2 incluye el inventario P2. Las cantidades sin factor de conversión quedan fuera del total de tallos y se muestran por separado en el Excel del inventario. El total es una suma de registros mensuales, no un saldo de existencias al cierre del mes.

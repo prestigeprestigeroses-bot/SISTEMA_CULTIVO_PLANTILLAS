@@ -424,6 +424,7 @@ h1 { margin: 5px 0 5px; color: var(--forest-950); font-size: clamp(28px, 3vw, 38
 .inventory-table tfoot th, .inventory-table tfoot td { position: sticky; bottom: 0; z-index: 2; background: var(--leaf-pale); font-weight: 800; }
 .inventory-table tfoot .inventory-identity { z-index: 3; background: var(--leaf-pale); }
 .inventory-mobile-capture { display: none; }
+#inventoryMonthToggle, .inventory-month-view { display: none; }
 body.capture-open { overflow: hidden; }
 body.capture-open .view.active { animation: none; }
 .table-card.sheet-expanded { position: fixed; top: var(--capture-top, 0px); right: 0; left: 0; z-index: 30; display: flex; flex-direction: column; width: 100%; height: var(--capture-height, 100dvh); border-radius: 0; background: var(--paper); }
@@ -638,6 +639,22 @@ body.capture-open .view.active { animation: none; }
   .inventory-card h2 { padding: 12px; font-size: 14px; }
   .inventory-table-scroll { display: none; }
   .inventory-mobile-capture { display: block; padding: 10px; }
+  #inventoryMonthToggle { display: inline-flex; }
+  .inventory-month-mode .inventory-mobile-capture { display: none; }
+  .inventory-month-mode .inventory-month-view { display: block; }
+  .inventory-month-view > p { margin: 0; padding: 9px 11px; color: var(--forest-800); font-size: 11px; }
+  .inventory-month-scroll { width: 100%; max-height: 68dvh; overflow: auto; overscroll-behavior: contain; }
+  .inventory-expanded .inventory-month-scroll { max-height: calc(var(--capture-height, 100dvh) - 185px); }
+  .inventory-month-table { width: max-content; border-collapse: separate; border-spacing: 0; font-size: 11px; }
+  .inventory-month-table th, .inventory-month-table td { min-width: 53px; height: 39px; padding: 5px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); text-align: center; white-space: nowrap; }
+  .inventory-month-table thead th { position: sticky; top: 0; z-index: 2; height: 39px; background: #e6f1f9; font-weight: 800; }
+  .inventory-month-table .inventory-month-name { position: sticky; left: 0; z-index: 1; min-width: 137px; max-width: 137px; background: var(--paper); text-align: left; white-space: normal; }
+  .inventory-month-table thead .inventory-month-name { z-index: 3; background: #e6f1f9; }
+  .inventory-month-table .inventory-month-name small, .inventory-month-table th small { display: block; font-size: 9px; }
+  .inventory-month-table .inventory-month-fn { background: #fff0f8; }
+  .inventory-month-table .inventory-month-total { min-width: 78px; background: var(--field-total-bg); font-weight: 800; }
+  .inventory-month-table tfoot th, .inventory-month-table tfoot td { position: sticky; bottom: 0; z-index: 2; background: var(--leaf-pale); font-weight: 800; }
+  .inventory-month-table tfoot .inventory-month-name { z-index: 3; }
   .inventory-mobile-capture > label { display: grid; gap: 5px; margin-bottom: 10px; color: var(--muted); font-size: 10px; font-weight: 800; text-transform: uppercase; }
   .inventory-mobile-capture select { width: 100%; min-height: 41px; padding: 5px 9px; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); background: #fff; font-size: 14px; }
   .inventory-mobile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }

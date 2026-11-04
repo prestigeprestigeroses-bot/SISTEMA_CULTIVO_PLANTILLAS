@@ -12,6 +12,7 @@
     save: document.querySelector('#inventorySave'),
     export: document.querySelector('#inventoryExport'),
     farmExport: document.querySelector('#inventoryFarmExport'),
+    monthToggle: document.querySelector('#inventoryMonthToggle'),
     farmTotal: document.querySelector('#inventoryFarmTotal'),
     farmBreakdown: document.querySelector('#inventoryFarmBreakdown'),
   };
@@ -19,7 +20,7 @@
   const model = {
     farmId: null, templates: [], key: null, template: null, data: null,
     section: 'processed', date: localDate(), variety: 0, process: null, gridDay: null,
-    dirty: false, saved: false, farmSummary: null,
+    dirty: false, saved: false, farmSummary: null, monthView: false,
   };
 
   function localDate() {
@@ -187,10 +188,42 @@
       <div class="inventory-mobile-capture">${period().extended ? '' : `<label>Día del mes<select id="inventoryGridDay">${Array.from({ length: days }, (_, i) => `<option value="${i + 1}" ${i + 1 === model.gridDay ? 'selected' : ''}>Día ${i + 1}</option>`).join('')}</select></label>`}<div class="inventory-mobile-head"><span>VARIEDAD</span><span>${unit.toUpperCase()}</span><span>TALLOS MES</span></div>${mobileRows}${fnMobile}</div>`;
   }
 
+  function mobileMonthEditor() {
+    const { days } = period();
+    const section = model.section;
+    const processed = section === 'processed';
+    const bulk = section === 'bulk';
+    const sourceRows = processed ? model.template.processed.varieties : model.template[section];
+    const rows = sourceRows.map((item, index) => ({ item, index })).filter(({ item }) => processed || !item.retired);
+    const valueFor = (row, day) => processed
+      ? model.template.processed.columns.reduce((sum, column) => sum +
+        (column.stems === null ? 0 : (model.data.processed[`${day}:${row}:${column.key}`] || 0) * column.stems), 0)
+      : (model.data[section][`${row}:${day}`] || 0);
+    const totalsByDay = Array(days).fill(0);
+    let totalUnits = 0;
+    let totalStems = 0;
+    let totalFn = 0;
+    const body = rows.map(({ item, index }) => {
+      const name = processed ? item : item.name;
+      const values = Array.from({ length: days }, (_, day) => valueFor(index, day + 1));
+      values.forEach((value, day) => { totalsByDay[day] += value; });
+      const units = values.reduce((sum, value) => sum + value, 0);
+      const fn = bulk ? (model.data.bulk[`${index}:FN`] || 0) : 0;
+      const stems = processed ? units : (item.stemsPerBunch === null ? 0 : units * item.stemsPerBunch) + fn;
+      totalUnits += units;
+      totalStems += stems;
+      totalFn += fn;
+      return `<tr><th scope="row" class="inventory-month-name ${String(name).startsWith('FREEDOM') ? 'inventory-freedom' : ''}">${escapeHtml(name)}${processed ? '' : `<small>${item.stemsPerBunch === null ? 'Sin factor' : `${item.stemsPerBunch} tallos/tabaco`}</small>`}</th>${values.map((value) => `<td>${value ? format(value) : '—'}</td>`).join('')}${bulk ? `<td class="inventory-month-fn">${fn ? format(fn) : '—'}</td>` : ''}<td class="inventory-month-total">${format(units)}</td>${processed ? '' : `<td class="inventory-month-total">${format(stems)}</td>`}</tr>`;
+    }).join('');
+    const unitsLabel = processed ? 'TOTAL TALLOS' : 'TOTAL TABACOS';
+    return `<div class="inventory-month-view"><p>Desliza la tabla hacia los lados para consultar todos los días. ${processed ? 'En ramos se muestran tallos por variedad y día.' : 'Cada día muestra tabacos; FN muestra tallos directos.'}</p><div class="inventory-month-scroll" tabindex="0" aria-label="Tabla de todos los días del mes"><table class="inventory-month-table"><thead><tr><th class="inventory-month-name" scope="col">VARIEDAD</th>${Array.from({ length: days }, (_, day) => `<th scope="col">${day + 1}</th>`).join('')}${bulk ? '<th scope="col" class="inventory-month-fn">FN<small>TALLOS</small></th>' : ''}<th scope="col" class="inventory-month-total">${unitsLabel}</th>${processed ? '' : '<th scope="col" class="inventory-month-total">TOTAL TALLOS</th>'}</tr></thead><tbody>${body}</tbody><tfoot><tr><th scope="row" class="inventory-month-name">TOTAL</th>${totalsByDay.map((value) => `<td>${format(value)}</td>`).join('')}${bulk ? `<td class="inventory-month-fn">${format(totalFn)}</td>` : ''}<td class="inventory-month-total">${format(totalUnits)}</td>${processed ? '' : `<td class="inventory-month-total">${format(totalStems)}</td>`}</tr></tfoot></table></div></div>`;
+  }
+
   function renderEditor() {
     if (!model.template || !model.data) { ui.editor.innerHTML = '<p class="inventory-note">Cargando inventario…</p>'; return; }
     const result = summary();
-    ui.editor.innerHTML = `<section class="inventory-card inventory-template-${model.key}"><h2>${sectionNames[model.section]} · ${escapeHtml(model.template.label)}</h2>${model.section === 'processed' ? processedEditor(result) : gridEditor(result)}</section>`;
+    ui.editor.innerHTML = `<section class="inventory-card inventory-template-${model.key}"><h2>${sectionNames[model.section]} · ${escapeHtml(model.template.label)}</h2>${model.section === 'processed' ? processedEditor(result) : gridEditor(result)}${model.monthView ? mobileMonthEditor() : ''}</section>`;
+    ui.view.classList.toggle('inventory-month-mode', model.monthView);
     renderMetrics();
   }
 
@@ -391,6 +424,13 @@
     updateCalculations();
   });
   ui.save.addEventListener('click', save);
+  ui.monthToggle.addEventListener('click', () => {
+    if (!model.data || !model.template) return;
+    model.monthView = !model.monthView;
+    ui.monthToggle.setAttribute('aria-pressed', String(model.monthView));
+    ui.monthToggle.textContent = model.monthView ? '← Captura por día' : '▦ Ver mes completo';
+    renderEditor();
+  });
   async function exportInventory(allFarm) {
     if (!model.template) return;
     if (model.dirty && window.authApp?.canEdit('inventory') && !(await save())) return;
