@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { templates, inventoryTemplate, blankInventory, inventoryDays, normalizeInventory, inventorySummary, inventoryMonthSummary } = require('../src/inventory');
+const { templates, inventoryTemplate, blankInventory, inventoryDays, carryInventoryToNewMonth, normalizeInventory, inventorySummary, inventoryMonthSummary } = require('../src/inventory');
 const db = require('../src/db');
 
 test('P2 usa 31 posiciones desde ahora y P1 las activa en diciembre de 2026', () => {
@@ -19,7 +19,7 @@ test('P2 usa 31 posiciones desde ahora y P1 las activa en diciembre de 2026', ()
   assert.equal(february.dailyStems[30], 2 * p2.bulk[0].stemsPerBunch);
 });
 
-test('el mes nuevo copia las mismas casillas 1 a 31 y FN en todos los inventarios de la finca', async () => {
+test('el mes nuevo conserva todas las casillas en su mismo día y sección', async () => {
   const p2 = inventoryTemplate('p2', 'F2');
   const data = { bulk: { '0:1': 2, '0:31': 3, '0:FN': 11 }, guard: { '0:31': 4 } };
   await db.saveInventory(2, 'p2', p2, 2047, 1, data);
@@ -32,6 +32,12 @@ test('el mes nuevo copia las mismas casillas 1 a 31 y FN en todos los inventario
   assert.deepEqual((await db.getInventory(2, 'p2', 2047, 2)).data.bulk, data.bulk);
   assert.deepEqual((await db.getInventory(2, 'p2', 2047, 2)).data.guard, data.guard);
   assert.deepEqual(await db.initializeInventoryMonth(2, 'F2', 2047, 2), []);
+  assert.equal((await db.getInventory(2, 'p2', 2047, 4)).saved, false);
+
+  const november = { bulk: { '0:30': 5, '0:31': 9 }, guard: { '0:30': 2, '0:31': 8 } };
+  await db.saveInventory(2, 'p2', p2, 2046, 11, november);
+  assert.deepEqual((await db.getInventory(2, 'p2', 2046, 12)).data.bulk, november.bulk);
+  assert.deepEqual((await db.getInventory(2, 'p2', 2046, 12)).data.guard, november.guard);
 
   const p1 = inventoryTemplate('p1', 'F1');
   const transfer = inventoryTemplate('p1_p2', 'F1');
@@ -44,6 +50,16 @@ test('el mes nuevo copia las mismas casillas 1 a 31 y FN en todos los inventario
     [{ key: 'p1', from: '2026-11' }, { key: 'p1_p2', from: '2026-11' }]);
   assert.deepEqual((await db.getInventory(1, 'p1', 2026, 12)).data, own);
   assert.deepEqual((await db.getInventory(1, 'p1_p2', 2026, 12)).data.bulk, p2Flower.bulk);
+});
+
+test('el traspaso de febrero conserva 28, 29, 31 y FN tal como estaban', () => {
+  const p2 = inventoryTemplate('p2', 'F2');
+  const previous = { bulk: { '0:28': 2, '0:29': 3, '0:31': 9, '0:FN': 17 }, guard: { '0:28': 4, '0:29': 5 } };
+  const carried = carryInventoryToNewMonth(p2, previous);
+  assert.deepEqual(carried.bulk, previous.bulk);
+  assert.deepEqual(carried.guard, previous.guard);
+  carried.bulk['0:28'] = 10;
+  assert.equal(previous.bulk['0:28'], 2);
 });
 
 test('estado diario conserva el total con que quedó el inventario de cada finca', async () => {

@@ -14,6 +14,9 @@
     farmExport: document.querySelector('#inventoryFarmExport'),
     farmTotal: document.querySelector('#inventoryFarmTotal'),
     farmBreakdown: document.querySelector('#inventoryFarmBreakdown'),
+    selectedDayTitle: document.querySelector('#inventorySelectedDayTitle'),
+    selectedDayStems: document.querySelector('#inventorySelectedDayStems'),
+    selectedDayBreakdown: document.querySelector('#inventorySelectedDayBreakdown'),
     dailyDate: document.querySelector('#inventoryDailyDate'),
     dailyStems: document.querySelector('#inventoryDailyStems'),
     dailyFarm: document.querySelector('#inventoryDailyFarm'),
@@ -104,6 +107,39 @@
     ui.save.textContent = model.dirty ? '✓ Guardar cambios' : model.saved ? '✓ Guardado' : '✓ Guardar inventario';
   }
 
+  function localDayStems(day) {
+    if (!model.template || !model.data) return 0;
+    let stems = 0;
+    for (const section of model.template.sections || ['processed', 'bulk', 'guard']) {
+      if (section === 'processed') {
+        model.template.processed.varieties.forEach((_, row) => {
+          for (const column of model.template.processed.columns) {
+            if (column.stems !== null) stems += (model.data.processed[`${day}:${row}:${column.key}`] || 0) * column.stems;
+          }
+        });
+      } else {
+        model.template[section].forEach((item, row) => {
+          if (!item.retired && item.stemsPerBunch !== null) {
+            stems += (model.data[section][`${row}:${day}`] || 0) * item.stemsPerBunch;
+          }
+        });
+      }
+    }
+    return stems;
+  }
+
+  function renderSelectedDay() {
+    const { day, month, year } = period();
+    ui.selectedDayTitle.textContent = `Día ${day}/${String(month).padStart(2, '0')}/${year}`;
+    if (!model.farmSummary) { ui.selectedDayStems.textContent = '—'; ui.selectedDayBreakdown.textContent = ''; return; }
+    const contributions = model.farmSummary.inventories.map((item) => ({
+      label: item.label,
+      stems: item.key === model.key ? localDayStems(day) : (item.summary.dailyStems?.[day - 1] || 0),
+    }));
+    ui.selectedDayStems.textContent = format(contributions.reduce((sum, item) => sum + item.stems, 0));
+    ui.selectedDayBreakdown.textContent = contributions.map((item) => `${item.label}: ${format(item.stems)}`).join(' · ');
+  }
+
   function renderDailyStems() {
     const [year, month, day] = model.captureDate.split('-').map(Number);
     ui.dailyDate.textContent = `· ${day}/${String(month).padStart(2, '0')}/${year}`;
@@ -151,12 +187,14 @@
       model.farmSummary = result;
       ui.farmTotal.textContent = format(result.totalStems);
       ui.farmBreakdown.textContent = result.inventories.map((item) => `${item.label}: ${format(item.summary.stems)}`).join(' · ');
+      renderSelectedDay();
       renderDailyStems();
     } catch (error) {
       if (farmId !== model.farmId || year !== period().year || month !== period().month) return;
       model.farmSummary = null;
       ui.farmTotal.textContent = '—';
       ui.farmBreakdown.textContent = error.message;
+      renderSelectedDay();
       renderDailyStems();
     }
   }
@@ -170,7 +208,7 @@
     ui.date.value = extended ? model.date.slice(0, 7) : model.date;
     ui.dateCaption.textContent = extended ? 'Mes del inventario' : 'Fecha del inventario';
     ui.dayLabel.hidden = !extended;
-    if (extended) ui.day.innerHTML = Array.from({ length: 31 }, (_, index) =>
+    if (extended) ui.day.innerHTML = Array.from({ length: period().days }, (_, index) =>
       `<option value="${index + 1}" ${index + 1 === day ? 'selected' : ''}>Día ${index + 1}</option>`).join('');
   }
 
@@ -220,10 +258,10 @@
     const days = period().days;
     model.gridDay = period().day;
     const displayDays = section === 'bulk' ? 31 : days;
-    const headers = Array.from({ length: displayDays }, (_, i) => `<th>${i + 1}</th>`).join('');
+    const headers = Array.from({ length: displayDays }, (_, i) => `<th class="${i + 1 === model.gridDay ? 'inventory-selected-day' : ''}">${i + 1}</th>`).join('');
     const fnHeader = isBulk ? '<th class="inventory-fn-heading" title="Fin de corte: ingresar tallos, no tabacos">FN<small>TALLOS</small></th>' : '';
-    const desktopRows = visibleRows.map(({ item, row }) => `<tr><th class="inventory-identity ${row < 3 ? 'inventory-freedom' : ''}">${escapeHtml(item.name)}<small>${item.stemsPerBunch === null ? 'Sin factor' : `${item.stemsPerBunch} tallos/${factorUnit}`}</small></th>${Array.from({ length: displayDays }, (_, i) => i < days ? `<td>${input(section, row, i + 1, `${item.name} día ${i + 1} ${unit}`)}</td>` : '<td class="inventory-day-unavailable">—</td>').join('')}${isBulk ? `<td class="inventory-fn-cell">${input(section, row, 'FN', `${item.name} FN fin de corte en tallos`)}</td>` : ''}<td class="inventory-total" data-row-units="${row}">${format(result.details[row].units)}</td><td class="inventory-total" data-row-stems="${row}">${format(result.details[row].stems)}</td></tr>`).join('');
-    const dayTotals = Array.from({ length: displayDays }, (_, i) => i < days ? `<td class="inventory-total" data-day-total="${i + 1}">${format(visibleRows.reduce((sum, { row }) => sum + amount(section, row, i + 1), 0))}</td>` : '<td class="inventory-day-unavailable">—</td>').join('');
+    const desktopRows = visibleRows.map(({ item, row }) => `<tr><th class="inventory-identity ${row < 3 ? 'inventory-freedom' : ''}">${escapeHtml(item.name)}<small>${item.stemsPerBunch === null ? 'Sin factor' : `${item.stemsPerBunch} tallos/${factorUnit}`}</small></th>${Array.from({ length: displayDays }, (_, i) => i < days ? `<td class="${i + 1 === model.gridDay ? 'inventory-selected-day' : ''}">${input(section, row, i + 1, `${item.name} día ${i + 1} ${unit}`)}</td>` : '<td class="inventory-day-unavailable">—</td>').join('')}${isBulk ? `<td class="inventory-fn-cell">${input(section, row, 'FN', `${item.name} FN fin de corte en tallos`)}</td>` : ''}<td class="inventory-total" data-row-units="${row}">${format(result.details[row].units)}</td><td class="inventory-total" data-row-stems="${row}">${format(result.details[row].stems)}</td></tr>`).join('');
+    const dayTotals = Array.from({ length: displayDays }, (_, i) => i < days ? `<td class="inventory-total ${i + 1 === model.gridDay ? 'inventory-selected-day' : ''}" data-day-total="${i + 1}">${format(visibleRows.reduce((sum, { row }) => sum + amount(section, row, i + 1), 0))}</td>` : '<td class="inventory-day-unavailable">—</td>').join('');
     const mobileRows = visibleRows.map(({ item, row }) => `<div class="inventory-mobile-row"><div><strong>${escapeHtml(item.name)}</strong><small>${item.stemsPerBunch === null ? 'Sin factor' : `${item.stemsPerBunch} tallos/${factorUnit}`}</small></div>${input(section, row, model.gridDay, `${item.name} día ${model.gridDay} ${unit}`)}<span data-row-stems="${row}">${format(result.details[row].stems)}</span></div>`).join('');
     const fnMobile = isBulk ? `<div class="inventory-fn-mobile"><h3>FN · Fin de corte</h3><p>Ingresa tallos directamente. No se multiplican por tallos/${factorUnit}.</p>${visibleRows.map(({ item, row }) => `<div class="inventory-fn-mobile-row"><strong>${escapeHtml(item.name)}</strong>${input(section, row, 'FN', `${item.name} FN fin de corte en tallos`)}</div>`).join('')}</div>` : '';
     return `<div class="inventory-note">Mes de ${new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric' }).format(new Date(period().year, period().month - 1, 1))}. Cada columna diaria registra ${unit}; total tallos = ${unit} × tallos por ${factorUnit}${isBulk ? ' + FN. FN (fin de corte) registra tallos directos.' : '.'}</div>
@@ -236,12 +274,14 @@
     const result = summary();
     ui.editor.innerHTML = `<section class="inventory-card inventory-template-${model.key}"><h2>${sectionNames[model.section]} · ${escapeHtml(model.template.label)}</h2>${model.section === 'processed' ? processedEditor(result) : gridEditor(result)}</section>`;
     renderMetrics();
+    renderSelectedDay();
     renderDailyStems();
   }
 
   function updateCalculations() {
     const result = summary();
     renderMetrics();
+    renderSelectedDay();
     renderDailyStems();
     ui.editor.querySelectorAll('[data-row-stems]').forEach((element) => { element.textContent = format(result.details[Number(element.dataset.rowStems)].stems); });
     ui.editor.querySelectorAll('[data-row-units]').forEach((element) => { element.textContent = format(result.details[Number(element.dataset.rowUnits)].units); });
@@ -290,6 +330,7 @@
     model.data = null;
     model.farmSummary = null;
     model.captureTotal = null;
+    renderSelectedDay();
     renderDailyStems();
     try {
       model.templates = await api(`/api/inventory/templates/${farmId}`);
@@ -403,7 +444,7 @@
   });
   ui.day.addEventListener('change', () => {
     const day = Number(ui.day.value);
-    if (!period().extended || !Number.isInteger(day) || day < 1 || day > 31) return;
+    if (!period().extended || !Number.isInteger(day) || day < 1 || day > period().days) return;
     model.gridDay = day;
     renderEditor();
   });

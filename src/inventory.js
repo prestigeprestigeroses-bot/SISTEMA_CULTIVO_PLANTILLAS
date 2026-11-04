@@ -34,6 +34,11 @@ function inventoryCarriesOver(template, year, month) {
   return template.farmCode === 'F2' || year * 100 + month >= 202612;
 }
 
+function carryInventoryToNewMonth(template, previous) {
+  return Object.fromEntries(availableSections(template).map((section) =>
+    [section, { ...(previous[section] || {}) }]));
+}
+
 function normalizeInventory(template, year, month, input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Inventario inválido');
   const maxDay = inventoryDays(template, year, month);
@@ -147,4 +152,4 @@ function inventoryMonthSummary(template, data, year, month) {
   };
 }
 
-module.exports = { templates, inventoryTemplate, blankInventory, availableSections, inventoryDays, inventoryCarriesOver, normalizeInventory, inventorySummary, inventoryMonthSummary };
+module.exports = { templates, inventoryTemplate, blankInventory, availableSections, inventoryDays, inventoryCarriesOver, carryInventoryToNewMonth, normalizeInventory, inventorySummary, inventoryMonthSummary };

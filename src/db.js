@@ -1,7 +1,7 @@
 const { Pool } = require('pg');
 const { defaultRecordsForFarm, templateRowsForFarm, P1_ROWS, P1_WEEKLY_TARGETS } = require('./defaults');
 const { blankFieldData, normalizeFieldData } = require('./field-data');
-const { templates, inventoryTemplate, inventoryCarriesOver, blankInventory, normalizeInventory, inventoryMonthSummary } = require('./inventory');
+const { templates, inventoryTemplate, inventoryCarriesOver, carryInventoryToNewMonth, blankInventory, normalizeInventory, inventoryMonthSummary } = require('./inventory');
 
 const connectionString = process.env.DATABASE_URL;
 const pool = connectionString
@@ -178,20 +178,17 @@ async function saveFieldData(farmId, year, week, input) {
 async function getInventory(farmId, templateKey, year, month) {
   const key = `${farmId}:${templateKey}:${year}:${month}`;
   const canCarry = templates[templateKey] && inventoryCarriesOver(templates[templateKey], year, month);
+  const previousYear = month === 1 ? year - 1 : year;
+  const previousMonth = month === 1 ? 12 : month - 1;
+  const previousPeriod = `${previousYear}-${String(previousMonth).padStart(2, '0')}`;
+  const carriedData = (payload) => carryInventoryToNewMonth(
+    inventoryTemplate(templateKey, templates[templateKey].farmCode), payload);
   if (!pool) {
     const data = memory.inventoryMonths.get(key);
     if (data) return { data, saved: true };
     if (canCarry) {
-      const prefix = `${farmId}:${templateKey}:`;
-      const previous = [...memory.inventoryMonths.entries()]
-        .filter(([savedKey]) => savedKey.startsWith(prefix))
-        .map(([savedKey, payload]) => {
-          const [savedYear, savedMonth] = savedKey.slice(prefix.length).split(':').map(Number);
-          return { savedYear, savedMonth, payload };
-        })
-        .filter((item) => item.savedYear * 12 + item.savedMonth < year * 12 + month)
-        .sort((left, right) => right.savedYear * 12 + right.savedMonth - left.savedYear * 12 - left.savedMonth)[0];
-      if (previous) return { data: previous.payload, saved: false, carriedFrom: `${previous.savedYear}-${String(previous.savedMonth).padStart(2, '0')}` };
+      const previous = memory.inventoryMonths.get(`${farmId}:${templateKey}:${previousYear}:${previousMonth}`);
+      if (previous) return { data: carriedData(previous), saved: false, carriedFrom: previousPeriod };
     }
     return { data: blankInventory(), saved: false };
   }
@@ -202,15 +199,11 @@ async function getInventory(farmId, templateKey, year, month) {
   if (rows.length) return { data: rows[0].payload, saved: true };
   if (canCarry) {
     const previous = await pool.query(`
-      SELECT payload, inventory_year, inventory_month FROM monthly_inventories
-      WHERE farm_id = $1 AND template_key = $2
-        AND (inventory_year < $3 OR (inventory_year = $3 AND inventory_month < $4))
-      ORDER BY inventory_year DESC, inventory_month DESC LIMIT 1
-    `, [farmId, templateKey, year, month]);
+      SELECT payload FROM monthly_inventories
+      WHERE farm_id = $1 AND template_key = $2 AND inventory_year = $3 AND inventory_month = $4
+    `, [farmId, templateKey, previousYear, previousMonth]);
     if (previous.rows.length) {
-      const item = previous.rows[0];
-      return { data: item.payload, saved: false,
-        carriedFrom: `${item.inventory_year}-${String(item.inventory_month).padStart(2, '0')}` };
+      return { data: carriedData(previous.rows[0].payload), saved: false, carriedFrom: previousPeriod };
     }
   }
   return { data: blankInventory(), saved: false };
