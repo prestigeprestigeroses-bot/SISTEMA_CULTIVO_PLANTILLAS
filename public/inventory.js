@@ -127,7 +127,7 @@
     ui.date.type = monthOnly ? 'month' : 'date';
     ui.date.value = monthOnly ? model.date.slice(0, 7) : model.date;
     ui.dateCaption.textContent = monthOnly ? 'Mes del inventario' : 'Fecha del inventario';
-    ui.dayLabel.hidden = !extended;
+    ui.dayLabel.hidden = !extended || model.key === 'p2';
     if (extended) ui.day.innerHTML = Array.from({ length: period().days }, (_, index) =>
       `<option value="${index + 1}" ${index + 1 === day ? 'selected' : ''}>Día ${index + 1}</option>`).join('');
   }
@@ -392,13 +392,6 @@
     const day = Number(ui.day.value);
     if (!period().extended || !Number.isInteger(day) || day < 1 || day > period().days) return;
     model.gridDay = day;
-    if (model.key === 'p2') {
-      const { year, month } = period();
-      if (day <= new Date(year, month, 0).getDate()) {
-        model.date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        ui.date.value = model.date;
-      }
-    }
     renderEditor();
   });
   ui.editor.addEventListener('change', (event) => {
