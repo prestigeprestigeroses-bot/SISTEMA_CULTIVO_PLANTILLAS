@@ -248,7 +248,10 @@
             </div>
             <div id="inventorySections" class="inventory-tabs inventory-section-tabs" role="group" aria-label="Sección del inventario"></div>
             <div class="inventory-farm-summary"><div><span>TOTAL TALLOS DE TODOS LOS INVENTARIOS DE ESTA FINCA · MES SELECCIONADO</span><strong id="inventoryFarmTotal">0</strong><small id="inventoryFarmBreakdown"></small></div><button class="button secondary" id="inventoryFarmExport" type="button">↓ Excel total finca</button></div>
-            <div class="inventory-day-summary"><span id="inventorySelectedDayTitle">Día seleccionado</span><strong id="inventorySelectedDayStems">—</strong><span>tallos registrados en ese día de la plantilla</span><small id="inventorySelectedDayBreakdown"></small></div>
+            <details class="inventory-daily-total inventory-day-summary" id="inventorySelectedDayPanel">
+              <summary><span id="inventorySelectedDayTitle">Día seleccionado</span><span class="inventory-daily-open">Ver datos</span></summary>
+              <div class="inventory-day-summary-content"><strong id="inventorySelectedDayStems">—</strong><span>tallos registrados en ese día de la plantilla</span><small id="inventorySelectedDayBreakdown"></small></div>
+            </details>
             <details class="inventory-daily-total" id="inventoryDailyTotal">
               <summary>Acumulado guardado al <span id="inventoryDailyDate"></span><span class="inventory-daily-open">Ver total</span></summary>
               <div class="inventory-daily-value"><label class="inventory-capture-date">Fecha que quieres consultar <input id="inventoryCaptureDate" type="date"></label><strong id="inventoryDailyStems">—</strong><span id="inventoryDailyFarm">tallos de la finca seleccionada</span><small id="inventoryDailyBreakdown"></small><small>Muestra la suma de los días del mes seleccionado tal como estaba guardada en esa fecha. Incluye ramos, granel, FN y guarde. Los días anteriores al primer estado guardado no se pueden reconstruir.</small></div>
