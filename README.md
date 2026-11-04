@@ -22,7 +22,6 @@ Sistema web para registrar la proyección y producción real de flor de dos finc
 - Consumo de P1 calculado como lectura final menos lectura inicial; consumo de P2 como goteo más cacho. El consumo acumulado en litros por cama usa el consumo m³ × 1000 / número de camas.
 - Exportación `.xlsx` de proyección, temperatura, registro hídrico, cada inventario y total mensual de inventarios por finca.
 - Total mensual de tallos por finca en Poscosecha, sumando inventario ramos, granel, guarde y FN de todos los inventarios disponibles para esa finca.
-- Estado diario de tallos en Poscosecha: cada guardado conserva una copia del total con el que quedó el inventario mensual de la finca ese día, sumando todas sus plantillas y FN. Al consultar una fecha se muestra el último estado guardado hasta ese día, sin sumar cambios ni usar la columna del día de la planilla. La fecha del guardado se calcula en `America/Bogota` o en la zona configurada con `INVENTORY_TIME_ZONE`. No se pueden reconstruir estados anteriores al primer guardado con esta función.
 - Persistencia PostgreSQL y migración automática al iniciar.
 - Modo temporal en memoria cuando no existe `DATABASE_URL`, útil para revisar la interfaz localmente.
 - Configuración de salud y despliegue para Railway.
@@ -70,6 +69,6 @@ En **Poscosecha**, elige la finca, el tipo de inventario y la fecha. P2 muestra 
 
 En **Flor a granel**, la columna **FN** (fin de corte) aparece después del día 31. Sus cantidades son tallos directos: se suman a **Total tallos** sin multiplicarse por el factor de tallos por tabaco ni aumentar **Total tabacos**. En celular, FN tiene una sección propia debajo de la captura diaria.
 
-El día seleccionado se resalta en la planilla y muestra su total de tallos por finca e inventario. En celular, el selector abre las cantidades de ese día. Este resumen diario cuenta los registros con día asignado; FN se conserva y se muestra por separado porque no tiene día de la plantilla.
+El día seleccionado se resalta en la planilla. En celular, el selector muestra las cantidades ingresadas para ese día. FN permanece en su propia columna porque no tiene día de la plantilla.
 
 El total de tallos de la finca corresponde al **mes seleccionado** y suma los tallos convertibles registrados en todas sus plantillas de inventario. P1 incluye su inventario propio y «Flor que amanece de P2»; P2 incluye el inventario P2. Las cantidades sin factor de conversión quedan fuera del total de tallos y se muestran por separado en el Excel del inventario. El total es una suma de registros mensuales, no un saldo de existencias al cierre del mes.

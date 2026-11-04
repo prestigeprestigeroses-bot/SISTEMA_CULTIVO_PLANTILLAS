@@ -14,20 +14,12 @@
     farmExport: document.querySelector('#inventoryFarmExport'),
     farmTotal: document.querySelector('#inventoryFarmTotal'),
     farmBreakdown: document.querySelector('#inventoryFarmBreakdown'),
-    selectedDayTitle: document.querySelector('#inventorySelectedDayTitle'),
-    selectedDayStems: document.querySelector('#inventorySelectedDayStems'),
-    selectedDayBreakdown: document.querySelector('#inventorySelectedDayBreakdown'),
-    dailyDate: document.querySelector('#inventoryDailyDate'),
-    dailyStems: document.querySelector('#inventoryDailyStems'),
-    dailyFarm: document.querySelector('#inventoryDailyFarm'),
-    dailyBreakdown: document.querySelector('#inventoryDailyBreakdown'),
-    captureDate: document.querySelector('#inventoryCaptureDate'),
   };
   const sectionNames = { processed: 'Inventario ramos', bulk: 'Flor a granel', guard: 'Flor de guarde' };
   const model = {
     farmId: null, templates: [], key: null, template: null, data: null,
     section: 'processed', date: localDate(), variety: 0, process: null, gridDay: null,
-    dirty: false, saved: false, farmSummary: null, captureDate: localDate(), captureTotal: null,
+    dirty: false, saved: false, farmSummary: null,
   };
 
   function localDate() {
@@ -107,76 +99,6 @@
     ui.save.textContent = model.dirty ? '✓ Guardar cambios' : model.saved ? '✓ Guardado' : '✓ Guardar inventario';
   }
 
-  function localDayStems(day) {
-    if (!model.template || !model.data) return 0;
-    let stems = 0;
-    for (const section of model.template.sections || ['processed', 'bulk', 'guard']) {
-      if (section === 'processed') {
-        model.template.processed.varieties.forEach((_, row) => {
-          for (const column of model.template.processed.columns) {
-            if (column.stems !== null) stems += (model.data.processed[`${day}:${row}:${column.key}`] || 0) * column.stems;
-          }
-        });
-      } else {
-        model.template[section].forEach((item, row) => {
-          if (!item.retired && item.stemsPerBunch !== null) {
-            stems += (model.data[section][`${row}:${day}`] || 0) * item.stemsPerBunch;
-          }
-        });
-      }
-    }
-    return stems;
-  }
-
-  function renderSelectedDay() {
-    const { day, month, year } = period();
-    ui.selectedDayTitle.textContent = `Día ${day}/${String(month).padStart(2, '0')}/${year}`;
-    if (!model.farmSummary) { ui.selectedDayStems.textContent = '—'; ui.selectedDayBreakdown.textContent = ''; return; }
-    const contributions = model.farmSummary.inventories.map((item) => ({
-      label: item.label,
-      stems: item.key === model.key ? localDayStems(day) : (item.summary.dailyStems?.[day - 1] || 0),
-    }));
-    ui.selectedDayStems.textContent = format(contributions.reduce((sum, item) => sum + item.stems, 0));
-    ui.selectedDayBreakdown.textContent = contributions.map((item) => `${item.label}: ${format(item.stems)}`).join(' · ');
-  }
-
-  function renderDailyStems() {
-    const [year, month, day] = model.captureDate.split('-').map(Number);
-    ui.dailyDate.textContent = `· ${day}/${String(month).padStart(2, '0')}/${year}`;
-    ui.captureDate.value = model.captureDate;
-    const farmName = document.querySelector('#farmSelect').selectedOptions[0]?.textContent || 'finca seleccionada';
-    const inventoryMonth = new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric' })
-      .format(new Date(period().year, period().month - 1, 1));
-    ui.dailyFarm.textContent = `tallos de todos los inventarios de ${farmName} · ${inventoryMonth}`;
-    if (!model.captureTotal?.saved) {
-      ui.dailyStems.textContent = '—';
-      ui.dailyBreakdown.textContent = model.captureTotal ? 'No hay un estado guardado para esa fecha.' : '';
-      return;
-    }
-    const contributions = model.templates.map((item) => ({ label: item.label,
-      stems: model.captureTotal.inventories.find((entry) => entry.key === item.key)?.stems || 0 }));
-    ui.dailyStems.textContent = format(model.captureTotal.totalStems);
-    ui.dailyBreakdown.textContent = contributions.map((item) => `${item.label}: ${format(item.stems)}`).join(' · ');
-  }
-
-  async function loadDailyStems() {
-    if (!model.farmId) return;
-    const farmId = model.farmId;
-    const date = model.captureDate;
-    const { year, month } = period();
-    try {
-      const result = await api(`/api/inventory/snapshot/${farmId}/${year}/${month}/${date}`, { cache: 'no-store' });
-      if (farmId !== model.farmId || date !== model.captureDate || year !== period().year || month !== period().month) return;
-      model.captureTotal = result;
-      renderDailyStems();
-    } catch (error) {
-      if (farmId !== model.farmId || date !== model.captureDate || year !== period().year || month !== period().month) return;
-      model.captureTotal = null;
-      ui.dailyBreakdown.textContent = error.message;
-      ui.dailyStems.textContent = '—';
-    }
-  }
-
   async function loadFarmSummary() {
     if (!model.farmId) return;
     const { year, month } = period();
@@ -187,15 +109,11 @@
       model.farmSummary = result;
       ui.farmTotal.textContent = format(result.totalStems);
       ui.farmBreakdown.textContent = result.inventories.map((item) => `${item.label}: ${format(item.summary.stems)}`).join(' · ');
-      renderSelectedDay();
-      renderDailyStems();
     } catch (error) {
       if (farmId !== model.farmId || year !== period().year || month !== period().month) return;
       model.farmSummary = null;
       ui.farmTotal.textContent = '—';
       ui.farmBreakdown.textContent = error.message;
-      renderSelectedDay();
-      renderDailyStems();
     }
   }
 
@@ -274,15 +192,11 @@
     const result = summary();
     ui.editor.innerHTML = `<section class="inventory-card inventory-template-${model.key}"><h2>${sectionNames[model.section]} · ${escapeHtml(model.template.label)}</h2>${model.section === 'processed' ? processedEditor(result) : gridEditor(result)}</section>`;
     renderMetrics();
-    renderSelectedDay();
-    renderDailyStems();
   }
 
   function updateCalculations() {
     const result = summary();
     renderMetrics();
-    renderSelectedDay();
-    renderDailyStems();
     ui.editor.querySelectorAll('[data-row-stems]').forEach((element) => { element.textContent = format(result.details[Number(element.dataset.rowStems)].stems); });
     ui.editor.querySelectorAll('[data-row-units]').forEach((element) => { element.textContent = format(result.details[Number(element.dataset.rowUnits)].units); });
     ui.editor.querySelectorAll('[data-all-stems]').forEach((element) => { element.textContent = format(result.totals.stems); });
@@ -314,7 +228,7 @@
       renderTabs();
       renderEditor();
       renderSaveState();
-      await Promise.all([loadFarmSummary(), loadDailyStems()]);
+      await loadFarmSummary();
     } catch (error) {
       ui.editor.innerHTML = `<p class="field-error">${escapeHtml(error.message)}</p>`;
       showToast(error.message, 'error');
@@ -329,9 +243,6 @@
     model.template = null;
     model.data = null;
     model.farmSummary = null;
-    model.captureTotal = null;
-    renderSelectedDay();
-    renderDailyStems();
     try {
       model.templates = await api(`/api/inventory/templates/${farmId}`);
       model.key = model.templates[0]?.key || null;
@@ -365,7 +276,7 @@
         model.dirty = false;
       }
       renderSaveState();
-      if (isCurrent()) await Promise.all([loadFarmSummary(), loadDailyStems()]);
+      if (isCurrent()) await loadFarmSummary();
       return true;
     } catch (error) { showToast(error.message, 'error'); return false; }
     finally { ui.save.disabled = false; renderMetrics(); }
@@ -401,7 +312,7 @@
       const nextTable = ui.editor.querySelector('.inventory-table-scroll');
       if (tablePosition && nextTable) nextTable.scrollTo(tablePosition.left, tablePosition.top);
     }
-    await Promise.all([loadFarmSummary(), loadDailyStems()]);
+    await loadFarmSummary();
   }
 
   async function save() {
@@ -438,7 +349,7 @@
     }
     model.date = nextDate;
     model.gridDay = Number(nextDate.slice(8));
-    if (oldMonth !== nextMonth) { model.farmSummary = null; model.captureTotal = null; }
+    if (oldMonth !== nextMonth) model.farmSummary = null;
     if (oldMonth !== nextMonth) await loadTemplate();
     else renderEditor();
   });
@@ -447,14 +358,6 @@
     if (!period().extended || !Number.isInteger(day) || day < 1 || day > period().days) return;
     model.gridDay = day;
     renderEditor();
-  });
-  ui.captureDate.addEventListener('change', () => {
-    const nextDate = ui.captureDate.value;
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(nextDate)) { ui.captureDate.value = model.captureDate; return; }
-    model.captureDate = nextDate;
-    model.captureTotal = null;
-    renderDailyStems();
-    loadDailyStems();
   });
   ui.editor.addEventListener('change', (event) => {
     if (event.target.id === 'inventoryVariety') model.variety = Number(event.target.value);
