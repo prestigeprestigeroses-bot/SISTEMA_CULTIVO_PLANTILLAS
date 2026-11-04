@@ -123,9 +123,10 @@
     const available = model.template?.sections || Object.keys(sectionNames);
     ui.sections.innerHTML = available.map((key) => `<button type="button" data-inventory-section="${key}" class="${key === model.section ? 'active' : ''}">${sectionNames[key]}</button>`).join('');
     const { extended, day } = period();
-    ui.date.type = extended ? 'month' : 'date';
-    ui.date.value = extended ? model.date.slice(0, 7) : model.date;
-    ui.dateCaption.textContent = extended ? 'Mes del inventario' : 'Fecha del inventario';
+    const monthOnly = extended && model.key !== 'p2';
+    ui.date.type = monthOnly ? 'month' : 'date';
+    ui.date.value = monthOnly ? model.date.slice(0, 7) : model.date;
+    ui.dateCaption.textContent = monthOnly ? 'Mes del inventario' : 'Fecha del inventario';
     ui.dayLabel.hidden = !extended;
     if (extended) ui.day.innerHTML = Array.from({ length: period().days }, (_, index) =>
       `<option value="${index + 1}" ${index + 1 === day ? 'selected' : ''}>Día ${index + 1}</option>`).join('');
@@ -279,6 +280,7 @@
     try {
       model.templates = await api(`/api/inventory/templates/${farmId}`);
       model.key = model.templates[0]?.key || null;
+      if (model.key === 'p2') { model.date = localDate(); model.gridDay = null; }
       renderTabs();
       await loadTemplate();
     } catch (error) {
@@ -384,12 +386,19 @@
     model.gridDay = Number(nextDate.slice(8));
     if (oldMonth !== nextMonth) model.farmSummary = null;
     if (oldMonth !== nextMonth) await loadTemplate();
-    else renderEditor();
+    else { renderTabs(); renderEditor(); }
   });
   ui.day.addEventListener('change', () => {
     const day = Number(ui.day.value);
     if (!period().extended || !Number.isInteger(day) || day < 1 || day > period().days) return;
     model.gridDay = day;
+    if (model.key === 'p2') {
+      const { year, month } = period();
+      if (day <= new Date(year, month, 0).getDate()) {
+        model.date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        ui.date.value = model.date;
+      }
+    }
     renderEditor();
   });
   ui.editor.addEventListener('change', (event) => {
