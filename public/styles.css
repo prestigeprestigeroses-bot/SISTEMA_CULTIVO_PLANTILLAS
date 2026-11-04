@@ -370,6 +370,8 @@ h1 { margin: 5px 0 5px; color: var(--forest-950); font-size: clamp(28px, 3vw, 38
 .inventory-date-label input { min-height: 39px; padding: 5px 9px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: #fff; }
 .inventory-date-label select { min-height: 39px; padding: 5px 9px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: #fff; }
 .inventory-date-label[hidden] { display: none; }
+.inventory-history-toggle { min-height: 39px; padding: 7px 11px; font-size: 11px; }
+.inventory-history-toggle[hidden] { display: none; }
 .report-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .inventory-farm-summary { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 16px; padding: 15px 18px; border: 1px solid var(--line); border-left: 5px solid var(--forest-700); border-radius: 11px; background: var(--leaf-pale); }
 .inventory-farm-summary span, .inventory-farm-summary strong, .inventory-farm-summary small { display: block; }

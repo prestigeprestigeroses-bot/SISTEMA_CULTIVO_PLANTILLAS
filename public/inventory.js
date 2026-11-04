@@ -5,6 +5,7 @@
     sections: document.querySelector('#inventorySections'),
     date: document.querySelector('#inventoryDate'),
     dateCaption: document.querySelector('#inventoryDateCaption'),
+    historyToggle: document.querySelector('#inventoryHistoryToggle'),
     day: document.querySelector('#inventoryDay'),
     dayLabel: document.querySelector('#inventoryDayLabel'),
     metrics: document.querySelector('#inventoryMetrics'),
@@ -136,6 +137,9 @@
     ui.date.max = localDate();
     ui.date.value = model.date;
     ui.dateCaption.textContent = 'Fecha del inventario';
+    ui.historyToggle.hidden = model.date >= localDate() && !model.historical;
+    ui.historyToggle.textContent = model.historical ? '← Volver a editar' : 'Ver cierre de esta fecha';
+    ui.historyToggle.setAttribute('aria-pressed', String(model.historical));
     ui.dayLabel.hidden = !extended || model.key === 'p2';
     ui.day.disabled = model.historical;
     if (extended) ui.day.innerHTML = Array.from({ length: period().days }, (_, index) =>
@@ -260,7 +264,6 @@
     if (!model.key) return;
     autosave.reset();
     const { year, month } = period();
-    model.historical = model.date < localDate();
     model.snapshot = null;
     ui.editor.innerHTML = '<p class="inventory-note">Cargando inventario…</p>';
     try {
@@ -297,6 +300,7 @@
     const farmId = Number(document.querySelector('#farmSelect').value);
     if (!farmId || (model.farmId === farmId && model.templates.length)) return;
     model.farmId = farmId;
+    model.historical = false;
     model.key = null;
     model.template = null;
     model.data = null;
@@ -407,8 +411,15 @@
       model.date = oldDate; renderTabs(); return;
     }
     model.date = nextDate;
+    if (nextDate >= localDate()) model.historical = false;
     model.gridDay = Number(nextDate.slice(8));
     if (oldMonth !== nextMonth) model.farmSummary = null;
+    await loadTemplate();
+  });
+  ui.historyToggle.addEventListener('click', async () => {
+    if (!model.key || (!model.historical && model.date >= localDate())) return;
+    if (!model.historical && !(await autosave.flush())) return;
+    model.historical = !model.historical;
     await loadTemplate();
   });
   ui.day.addEventListener('change', () => {
