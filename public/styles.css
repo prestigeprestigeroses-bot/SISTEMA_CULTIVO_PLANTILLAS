@@ -384,6 +384,7 @@ h1 { margin: 5px 0 5px; color: var(--forest-950); font-size: clamp(28px, 3vw, 38
 .inventory-card { overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); box-shadow: var(--shadow); }
 .inventory-card h2 { margin: 0; padding: 14px 18px; color: var(--forest-950); background: var(--field-title); font-size: 16px; }
 .inventory-note { padding: 11px 17px; color: var(--muted); font-size: 11px; line-height: 1.4; }
+.inventory-history-note { margin: 0 0 10px; padding: 10px 13px; border-radius: 8px; background: #e7f2fb; color: #174d70; font-size: 12px; font-weight: 700; }
 .inventory-table-scroll { overflow: auto; max-height: 620px; }
 .inventory-table { border-collapse: separate; border-spacing: 0; min-width: max-content; font-size: 11px; }
 .inventory-table th, .inventory-table td { min-width: 69px; height: 41px; padding: 3px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); text-align: center; }

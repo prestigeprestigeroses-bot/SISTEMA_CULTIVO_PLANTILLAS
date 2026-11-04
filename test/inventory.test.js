@@ -82,6 +82,7 @@ test('estado diario conserva el total con que quedó el inventario de cada finca
   const p2Stems = inventoryMonthSummary(p2, p2Data, 2045, 7).stems;
   assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-27')).saved, false);
   assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-28')).totalStems, ownStems + transferStems);
+  assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-28')).inventories.find((item) => item.key === 'p1').data.processed['1:0:B'], 2);
   assert.equal((await db.getInventorySnapshot(2, 2045, 7, '2045-07-28')).totalStems, p2Stems);
   await db.saveInventory(1, 'p1', p1, 2045, 7, own, entered);
   assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-28')).totalStems, ownStems + transferStems);
@@ -89,6 +90,9 @@ test('estado diario conserva el total con que quedó el inventario de cada finca
   await db.saveInventory(1, 'p1', p1, 2045, 7, own, later);
   assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-29')).totalStems, ownStems + transferStems + 6);
   assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-28')).totalStems, ownStems + transferStems);
+  assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-28')).inventories.find((item) => item.key === 'p1').data.processed['1:0:B'], 2);
+  assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-29')).inventories.find((item) => item.key === 'p1').data.processed['1:0:B'], 3);
+  assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-30')).recordedDate, '2045-07-29');
   assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-30')).totalStems, ownStems + transferStems + 6);
 });
 

@@ -21,6 +21,7 @@
     farmId: null, templates: [], key: null, template: null, data: null,
     section: 'processed', date: localDate(), variety: 0, process: null, gridDay: null,
     dirty: false, saved: false, farmSummary: null, monthView: false,
+    historical: false, snapshot: null,
   };
 
   function localDate() {
@@ -50,7 +51,7 @@
   function amount(section, row, column) { return model.data?.[section]?.[keyFor(section, row, column)] || 0; }
   function input(section, row, column, label) {
     const value = amount(section, row, column);
-    return `<input class="inventory-input" type="number" min="0" max="1000000" step="1" inputmode="numeric" data-section="${section}" data-inventory-key="${keyFor(section, row, column)}" value="${value || ''}" aria-label="${escapeHtml(label)}" placeholder="—">`;
+    return `<input class="inventory-input" type="number" min="0" max="1000000" step="1" inputmode="numeric" data-section="${section}" data-inventory-key="${keyFor(section, row, column)}" value="${value || ''}" aria-label="${escapeHtml(label)}" placeholder="—" ${model.historical ? 'disabled' : ''}>`;
   }
 
   function summary() {
@@ -97,11 +98,19 @@
       <article><span>FLOR ROJA</span><strong>${format(result.totals.red)}</strong></article>
       <article><span>FLOR DE COLOR</span><strong>${format(result.totals.color)}</strong></article>
       <article><span>CANTIDADES SIN CONVERSIÓN</span><strong>${format(result.totals.unweighted)}</strong></article>`;
-    ui.save.textContent = model.dirty ? '✓ Guardar cambios' : model.saved ? '✓ Guardado' : '✓ Guardar inventario';
+    ui.save.textContent = model.historical ? 'Consulta histórica' : model.dirty ? '✓ Guardar cambios' : model.saved ? '✓ Guardado' : '✓ Guardar inventario';
   }
 
   async function loadFarmSummary() {
     if (!model.farmId) return;
+    if (model.historical) {
+      const snapshot = model.snapshot;
+      ui.farmTotal.textContent = snapshot?.saved ? format(snapshot.totalStems) : '—';
+      ui.farmBreakdown.textContent = snapshot?.saved
+        ? `Corte: ${snapshot.recordedDate} · ${snapshot.inventories.map((item) => `${model.templates.find((template) => template.key === item.key)?.label || item.key}: ${format(item.stems)}`).join(' · ')}`
+        : 'No hay inventario guardado para esa fecha.';
+      return;
+    }
     const { year, month } = period();
     const farmId = model.farmId;
     try {
@@ -123,11 +132,12 @@
     const available = model.template?.sections || Object.keys(sectionNames);
     ui.sections.innerHTML = available.map((key) => `<button type="button" data-inventory-section="${key}" class="${key === model.section ? 'active' : ''}">${sectionNames[key]}</button>`).join('');
     const { extended, day } = period();
-    const monthOnly = extended && model.key !== 'p2';
-    ui.date.type = monthOnly ? 'month' : 'date';
-    ui.date.value = monthOnly ? model.date.slice(0, 7) : model.date;
-    ui.dateCaption.textContent = monthOnly ? 'Mes del inventario' : 'Fecha del inventario';
+    ui.date.type = 'date';
+    ui.date.max = localDate();
+    ui.date.value = model.date;
+    ui.dateCaption.textContent = 'Fecha del inventario';
     ui.dayLabel.hidden = !extended || model.key === 'p2';
+    ui.day.disabled = model.historical;
     if (extended) ui.day.innerHTML = Array.from({ length: period().days }, (_, index) =>
       `<option value="${index + 1}" ${index + 1 === day ? 'selected' : ''}>Día ${index + 1}</option>`).join('');
   }
@@ -186,7 +196,7 @@
     const fnMobile = isBulk ? `<div class="inventory-fn-mobile"><h3>FN · Fin de corte</h3><p>Ingresa tallos directamente. No se multiplican por tallos/${factorUnit}.</p>${visibleRows.map(({ item, row }) => `<div class="inventory-fn-mobile-row"><strong>${escapeHtml(item.name)}</strong>${input(section, row, 'FN', `${item.name} FN fin de corte en tallos`)}</div>`).join('')}</div>` : '';
     return `<div class="inventory-note">Mes de ${new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric' }).format(new Date(period().year, period().month - 1, 1))}. Cada columna diaria registra ${unit}; total tallos = ${unit} × tallos por ${factorUnit}${isBulk ? ' + FN. FN (fin de corte) registra tallos directos.' : '.'}</div>
       <div class="inventory-table-scroll"><table class="inventory-table inventory-grid-table"><thead><tr><th class="inventory-identity">VARIEDAD</th>${headers}${fnHeader}<th>TOTAL ${unit.toUpperCase()}</th><th>TOTAL TALLOS</th></tr></thead><tbody>${desktopRows}</tbody><tfoot><tr><th class="inventory-identity">TOTAL</th>${dayTotals}${isBulk ? `<td class="inventory-total inventory-fn-total" data-all-fn>${format(result.totals.fnStems)}</td>` : ''}<td class="inventory-total" data-all-units>${format(result.totals.units)}</td><td class="inventory-total" data-all-stems>${format(result.totals.stems)}</td></tr></tfoot></table></div>
-      <div class="inventory-mobile-capture">${period().extended ? '' : `<label>Día del mes<select id="inventoryGridDay">${Array.from({ length: days }, (_, i) => `<option value="${i + 1}" ${i + 1 === model.gridDay ? 'selected' : ''}>Día ${i + 1}</option>`).join('')}</select></label>`}<div class="inventory-mobile-head"><span>VARIEDAD</span><span>${unit.toUpperCase()}</span><span>TALLOS MES</span></div>${mobileRows}${fnMobile}</div>`;
+      <div class="inventory-mobile-capture"><div class="inventory-mobile-head"><span>VARIEDAD</span><span>${unit.toUpperCase()}</span><span>TALLOS MES</span></div>${mobileRows}${fnMobile}</div>`;
   }
 
   function mobileMonthEditor() {
@@ -221,9 +231,15 @@
   }
 
   function renderEditor() {
-    if (!model.template || !model.data) { ui.editor.innerHTML = '<p class="inventory-note">Cargando inventario…</p>'; return; }
+    if (!model.template || !model.data) {
+      ui.editor.innerHTML = `<p class="${model.historical ? 'inventory-history-note' : 'inventory-note'}">${model.historical ? `No hay una copia detallada del inventario guardada para esta fecha. ${model.snapshot?.saved ? `Total mensual al ${escapeHtml(model.snapshot.recordedDate)}: ${format(model.snapshot.totalStems)} tallos.` : 'No hay registros guardados hasta esa fecha.'}` : 'Cargando inventario…'}</p>`;
+      ui.metrics.innerHTML = '';
+      ui.save.textContent = model.historical ? 'Consulta histórica' : '✓ Guardar inventario';
+      return;
+    }
     const result = summary();
-    ui.editor.innerHTML = `<section class="inventory-card inventory-template-${model.key}"><h2>${sectionNames[model.section]} · ${escapeHtml(model.template.label)}</h2>${model.section === 'processed' ? processedEditor(result) : gridEditor(result)}${model.monthView ? mobileMonthEditor() : ''}</section>`;
+    const historyNote = model.historical ? `<p class="inventory-history-note">Inventario guardado al ${escapeHtml(model.snapshot?.recordedDate || model.date)} · Total mensual hasta esa fecha: ${format(model.snapshot?.totalStems)} tallos · Solo lectura.</p>` : '';
+    ui.editor.innerHTML = `${historyNote}<section class="inventory-card inventory-template-${model.key}"><h2>${sectionNames[model.section]} · ${escapeHtml(model.template.label)}</h2>${model.section === 'processed' ? processedEditor(result) : gridEditor(result)}${model.monthView ? mobileMonthEditor() : ''}</section>`;
     ui.view.classList.toggle('inventory-month-mode', model.monthView);
     renderMetrics();
   }
@@ -244,23 +260,31 @@
     if (!model.key) return;
     autosave.reset();
     const { year, month } = period();
+    model.historical = model.date < localDate();
+    model.snapshot = null;
     ui.editor.innerHTML = '<p class="inventory-note">Cargando inventario…</p>';
     try {
-      if (window.authApp?.canEdit('inventory')) {
+      if (!model.historical && window.authApp?.canEdit('inventory')) {
         const initialized = await api(`/api/inventory/initialize/${model.farmId}/${year}/${month}`, { method: 'POST' });
         if (initialized.copied.length) showToast(`Inventario del mes anterior copiado al nuevo mes.`);
       }
       const response = await api(`/api/inventory/${model.farmId}/${model.key}/${year}/${month}`);
       model.template = response.template;
-      model.data = response.data;
+      if (model.historical) {
+        model.snapshot = await api(`/api/inventory/snapshot/${model.farmId}/${year}/${month}/${model.date}`, { cache: 'no-store' });
+        model.data = model.snapshot.inventories.find((item) => item.key === model.key)?.data || null;
+      } else model.data = response.data;
       if (!model.template.sections?.includes(model.section) && model.template.sections) model.section = model.template.sections[0];
-      model.saved = response.saved;
+      model.saved = model.historical ? Boolean(model.data) : response.saved;
       model.dirty = false;
       model.variety = 0;
       model.process = null;
       model.gridDay = period().day;
       renderTabs();
       renderEditor();
+      ui.save.disabled = model.historical;
+      ui.export.disabled = model.historical;
+      ui.farmExport.disabled = model.historical;
       renderSaveState();
       await loadFarmSummary();
     } catch (error) {
@@ -323,7 +347,7 @@
   }
 
   async function refresh() {
-    if (!model.farmId || !model.key || !model.data || model.dirty || autosave.saving || inventoryInputFocused()) return;
+    if (!model.farmId || !model.key || !model.data || model.historical || model.dirty || autosave.saving || inventoryInputFocused()) return;
     const farmId = model.farmId;
     const key = model.key;
     const { year, month } = period();
@@ -351,7 +375,7 @@
   }
 
   async function save() {
-    if (!window.authApp?.canEdit('inventory') || !model.data) return false;
+    if (model.historical || !window.authApp?.canEdit('inventory') || !model.data) return false;
     if (!model.dirty) return true;
     const saved = await autosave.flush();
     if (saved) showToast(`${model.template.label} guardado.`);
@@ -375,42 +399,33 @@
   });
   ui.date.addEventListener('change', async () => {
     const oldDate = model.date;
-    const nextDate = ui.date.type === 'month' ? `${ui.date.value}-01` : ui.date.value;
+    const nextDate = ui.date.value;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(nextDate)) { renderTabs(); return; }
     const oldMonth = oldDate.slice(0, 7);
     const nextMonth = nextDate.slice(0, 7);
-    if (oldMonth !== nextMonth && !(await autosave.flush())) {
+    if (!(await autosave.flush())) {
       model.date = oldDate; renderTabs(); return;
     }
     model.date = nextDate;
     model.gridDay = Number(nextDate.slice(8));
     if (oldMonth !== nextMonth) model.farmSummary = null;
-    if (oldMonth !== nextMonth) await loadTemplate();
-    else { renderTabs(); renderEditor(); }
+    await loadTemplate();
   });
   ui.day.addEventListener('change', () => {
     const day = Number(ui.day.value);
-    if (!period().extended || !Number.isInteger(day) || day < 1 || day > period().days) return;
+    if (model.historical || !period().extended || !Number.isInteger(day) || day < 1 || day > period().days) return;
     model.gridDay = day;
     renderEditor();
   });
   ui.editor.addEventListener('change', (event) => {
     if (event.target.id === 'inventoryVariety') model.variety = Number(event.target.value);
     else if (event.target.id === 'inventoryProcess') model.process = event.target.value;
-    else if (event.target.id === 'inventoryGridDay') {
-      const day = Number(event.target.value);
-      const { year, month, days } = period();
-      if (!Number.isInteger(day) || day < 1 || day > days) return;
-      model.date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      model.gridDay = day;
-      renderTabs();
-    }
     else return;
     renderEditor();
   });
   ui.editor.addEventListener('input', (event) => {
     const target = event.target.closest('.inventory-input');
-    if (!target || !model.data) return;
+    if (!target || !model.data || model.historical) return;
     const raw = target.value;
     if (raw && (!/^\d+$/.test(raw) || Number(raw) > 1000000)) { target.setCustomValidity('Ingresa una cantidad entera entre 0 y 1.000.000'); return; }
     target.setCustomValidity('');

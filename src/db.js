@@ -223,7 +223,8 @@ function inventorySnapshot(farmId, farmCode, year, month, savedInventories) {
     .map(([key]) => {
       const template = inventoryTemplate(key, farmCode);
       const data = savedInventories.get(key) || blankInventory();
-      return { key, stems: inventoryMonthSummary(template, data, year, month).stems };
+      return { key, stems: inventoryMonthSummary(template, data, year, month).stems,
+        data: JSON.parse(JSON.stringify(data)) };
     });
   return { farmId: Number(farmId), year, month, inventories,
     totalStems: inventories.reduce((sum, item) => sum + item.stems, 0) };
@@ -236,7 +237,7 @@ async function saveInventory(farmId, templateKey, template, year, month, input, 
   const farmCode = template.farmCode;
   if (!pool) {
     const existing = memory.inventoryMonths.get(key) || blankInventory();
-    memory.inventoryMonths.set(key, template.sections ? { ...existing, ...data } : data);
+    memory.inventoryMonths.set(key, JSON.parse(JSON.stringify(template.sections ? { ...existing, ...data } : data)));
     const saved = new Map();
     for (const [inventoryKey] of Object.entries(templates)) {
       const value = memory.inventoryMonths.get(`${farmId}:${inventoryKey}:${year}:${month}`);
@@ -284,21 +285,24 @@ async function saveInventory(farmId, templateKey, template, year, month, input, 
 
 async function getInventorySnapshot(farmId, year, month, snapshotDate) {
   let snapshot;
+  let recordedDate = null;
   if (!pool) {
     const prefix = `${farmId}:${year}:${month}:`;
     const dates = [...memory.inventorySnapshots.keys()]
       .filter((key) => key.startsWith(prefix) && key.slice(prefix.length) <= snapshotDate).sort();
-    snapshot = dates.length ? memory.inventorySnapshots.get(dates.at(-1)) : null;
+    recordedDate = dates.length ? dates.at(-1).slice(prefix.length) : null;
+    snapshot = recordedDate ? memory.inventorySnapshots.get(`${prefix}${recordedDate}`) : null;
   } else {
     const { rows } = await pool.query(`
-      SELECT payload FROM inventory_daily_snapshots
+      SELECT payload, snapshot_date::text AS recorded_date FROM inventory_daily_snapshots
       WHERE farm_id = $1 AND inventory_year = $2 AND inventory_month = $3 AND snapshot_date <= $4::date
       ORDER BY snapshot_date DESC LIMIT 1
     `, [farmId, year, month, snapshotDate]);
     snapshot = rows[0]?.payload || null;
+    recordedDate = rows[0]?.recorded_date || null;
   }
   return { farmId: Number(farmId), year, month, snapshotDate, saved: Boolean(snapshot),
-    inventories: snapshot?.inventories || [], totalStems: snapshot?.totalStems ?? null };
+    recordedDate, inventories: snapshot?.inventories || [], totalStems: snapshot?.totalStems ?? null };
 }
 
 async function initializeInventoryMonth(farmId, farmCode, year, month) {
