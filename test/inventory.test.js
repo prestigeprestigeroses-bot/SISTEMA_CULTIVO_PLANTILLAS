@@ -87,6 +87,11 @@ test('estado diario conserva el total con que quedó el inventario de cada finca
   assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-28')).totalStems, ownStems + transferStems);
   assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-28')).inventories.find((item) => item.key === 'p1').data.processed['1:0:B'], 2);
   assert.equal((await db.getInventorySnapshot(2, 2045, 7, '2045-07-28')).totalStems, p2Stems);
+  p2Data.guard['0:3'] = 2;
+  await db.saveInventory(2, 'p2', p2, 2045, 7, p2Data, later);
+  assert.equal((await db.getInventorySnapshot(2, 2045, 7, '2045-07-28')).totalStems, p2Stems);
+  assert.equal((await db.getInventorySnapshot(2, 2045, 7, '2045-07-29')).totalStems,
+    p2Stems + 2 * p2.guard[0].stemsPerBunch);
   await db.saveInventory(1, 'p1', p1, 2045, 7, own, entered);
   assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-28')).totalStems, ownStems + transferStems);
   own.processed['1:0:B'] = 3;

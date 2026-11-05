@@ -15,6 +15,7 @@
     farmExport: document.querySelector('#inventoryFarmExport'),
     monthToggle: document.querySelector('#inventoryMonthToggle'),
     farmTotal: document.querySelector('#inventoryFarmTotal'),
+    farmTotalCaption: document.querySelector('#inventoryFarmTotalCaption'),
     farmBreakdown: document.querySelector('#inventoryFarmBreakdown'),
   };
   const sectionNames = { processed: 'Inventario ramos', bulk: 'Flor a granel', guard: 'Flor de guarde' };
@@ -102,24 +103,32 @@
 
   async function loadFarmSummary() {
     if (!model.farmId) return;
-    if (model.historical) {
-      const snapshot = model.snapshot;
-      ui.farmTotal.textContent = snapshot?.saved ? format(snapshot.totalStems) : '—';
-      ui.farmBreakdown.textContent = snapshot?.saved
-        ? `Corte: ${snapshot.recordedDate} · ${snapshot.inventories.map((item) => `${model.templates.find((template) => template.key === item.key)?.label || item.key}: ${format(item.stems)}`).join(' · ')}`
-        : 'No hay inventario guardado para esa fecha.';
-      return;
-    }
     const { year, month } = period();
     const farmId = model.farmId;
+    const selectedDate = model.date;
+    const isPast = selectedDate < localDate();
+    ui.farmTotalCaption.textContent = isPast
+      ? `TOTAL TALLOS DE TODOS LOS INVENTARIOS DE ESTA FINCA · AL ${selectedDate}`
+      : 'TOTAL TALLOS DE TODOS LOS INVENTARIOS DE ESTA FINCA · MES SELECCIONADO';
     try {
+      if (isPast) {
+        const snapshot = model.historical && model.snapshot
+          ? model.snapshot
+          : await api(`/api/inventory/snapshot/${farmId}/${year}/${month}/${selectedDate}`, { cache: 'no-store' });
+        if (farmId !== model.farmId || selectedDate !== model.date) return;
+        ui.farmTotal.textContent = snapshot.saved ? format(snapshot.totalStems) : '—';
+        ui.farmBreakdown.textContent = snapshot.saved
+          ? `Cierre: ${snapshot.recordedDate} · ${snapshot.inventories.map((item) => `${model.templates.find((template) => template.key === item.key)?.label || item.key}: ${format(item.stems)}`).join(' · ')}`
+          : 'No hay cierre de inventario guardado para esta fecha.';
+        return;
+      }
       const result = await api(`/api/inventory/summary/${farmId}/${year}/${month}`, { cache: 'no-store' });
-      if (farmId !== model.farmId || year !== period().year || month !== period().month) return;
+      if (farmId !== model.farmId || selectedDate !== model.date) return;
       model.farmSummary = result;
       ui.farmTotal.textContent = format(result.totalStems);
       ui.farmBreakdown.textContent = result.inventories.map((item) => `${item.label}: ${format(item.summary.stems)}`).join(' · ');
     } catch (error) {
-      if (farmId !== model.farmId || year !== period().year || month !== period().month) return;
+      if (farmId !== model.farmId || selectedDate !== model.date) return;
       model.farmSummary = null;
       ui.farmTotal.textContent = '—';
       ui.farmBreakdown.textContent = error.message;
@@ -130,8 +139,7 @@
     ui.templates.innerHTML = model.templates.map((item) => `<button type="button" data-template="${item.key}" class="${item.key === model.key ? 'active' : ''}">${escapeHtml(item.label)}</button>`).join('');
     const available = model.template?.sections || Object.keys(sectionNames);
     ui.sections.innerHTML = available.map((key) => `<button type="button" data-inventory-section="${key}" class="${key === model.section ? 'active' : ''}">${sectionNames[key]}</button>`).join('');
-    const { year, month, calendarDay, day } = period();
-    const lastCalendarDay = new Date(year, month, 0).getDate();
+    const { day } = period();
     ui.date.type = 'date';
     ui.date.max = localDate();
     ui.date.value = model.date;
@@ -139,11 +147,10 @@
     ui.historyToggle.hidden = model.date >= localDate() && !model.historical;
     ui.historyToggle.textContent = model.historical ? '← Volver a editar' : 'Ver cierre de esta fecha';
     ui.historyToggle.setAttribute('aria-pressed', String(model.historical));
-    ui.dayLabel.hidden = lastCalendarDay === 31;
-    ui.day.disabled = model.historical;
-    ui.day.innerHTML = `<option value="${calendarDay}" ${day === calendarDay ? 'selected' : ''}>Fecha seleccionada · ${calendarDay}</option>` +
-      Array.from({ length: 31 - lastCalendarDay }, (_, index) => lastCalendarDay + index + 1)
-        .map((extraDay) => `<option value="${extraDay}" ${day === extraDay ? 'selected' : ''}>Día ${extraDay}</option>`).join('');
+    ui.dayLabel.hidden = false;
+    ui.day.disabled = false;
+    ui.day.innerHTML = Array.from({ length: 31 }, (_, index) =>
+      `<option value="${index + 1}" ${day === index + 1 ? 'selected' : ''}>Día ${index + 1}</option>`).join('');
   }
 
   function processedEditor(result) {
@@ -178,7 +185,7 @@
       <div class="inventory-mobile-process ${processClass(model.process)}">${escapeHtml(model.process)}</div>
       <div class="inventory-mobile-grid">${mobileCards}</div>
       <div class="inventory-mobile-total">${escapeHtml(varieties[current])}: <strong data-row-stems="${current}">${format(result.details[current].stems)}</strong> tallos</div></div>`;
-    return `<div class="inventory-note">Captura del día ${period().day}. Las presentaciones se muestran por cantidad de tallos (de mayor a menor); las casillas y sus registros se conservan. “Nacional” y “NAL” quedan aparte porque no tienen factor.</div>
+    return `<div class="inventory-note">Captura de flor del día ${period().day}. Las presentaciones se muestran por cantidad de tallos (de mayor a menor); las casillas y sus registros se conservan. “Nacional” y “NAL” quedan aparte porque no tienen factor.</div>
       <div class="inventory-table-scroll"><table class="inventory-table inventory-processed-table"><thead><tr><th rowspan="3" class="inventory-identity">VARIEDAD</th>${factorHead}<th rowspan="3">TOTAL TALLOS</th></tr><tr>${groupedHead}</tr><tr>${columnHead}</tr></thead><tbody>${rows}</tbody><tfoot><tr><th class="inventory-identity">TOTAL</th>${totals}<td class="inventory-total" data-all-stems>${format(result.totals.stems)}</td></tr></tfoot></table></div>${mobile}`;
   }
 
@@ -244,7 +251,7 @@
     const result = summary();
     const historyNote = model.historical ? `<p class="inventory-history-note">Inventario guardado al ${escapeHtml(model.snapshot?.recordedDate || model.date)} · Total mensual hasta esa fecha: ${format(model.snapshot?.totalStems)} tallos · Solo lectura.</p>` : '';
     const captureMonth = new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric' }).format(new Date(period().year, period().month - 1, 1));
-    ui.editor.innerHTML = `${historyNote}<section class="inventory-card inventory-template-${model.key}"><h2>${sectionNames[model.section]} · ${escapeHtml(model.template.label)}</h2><div class="inventory-selected-date">${model.historical ? 'Consulta' : 'Captura'} · Día ${period().day} de ${captureMonth}</div>${model.section === 'processed' ? processedEditor(result) : gridEditor(result)}${model.monthView ? mobileMonthEditor() : ''}</section>`;
+    ui.editor.innerHTML = `${historyNote}<section class="inventory-card inventory-template-${model.key}"><h2>${sectionNames[model.section]} · ${escapeHtml(model.template.label)}</h2><div class="inventory-selected-date">Flor: día ${period().day} · Planilla: ${captureMonth}</div>${model.section === 'processed' ? processedEditor(result) : gridEditor(result)}${model.monthView ? mobileMonthEditor() : ''}</section>`;
     ui.view.classList.toggle('inventory-month-mode', model.monthView);
     renderMetrics();
   }
@@ -413,7 +420,6 @@
     }
     model.date = nextDate;
     if (nextDate >= localDate()) model.historical = false;
-    model.gridDay = Number(nextDate.slice(8));
     if (oldMonth !== nextMonth) model.farmSummary = null;
     await loadTemplate();
   });
@@ -425,7 +431,7 @@
   });
   ui.day.addEventListener('change', () => {
     const day = Number(ui.day.value);
-    if (model.historical || !period().extended || !Number.isInteger(day) || day < 1 || day > period().days) return;
+    if (!Number.isInteger(day) || day < 1 || day > 31) return;
     model.gridDay = day;
     renderEditor();
   });

@@ -368,8 +368,12 @@ h1 { margin: 5px 0 5px; color: var(--forest-950); font-size: clamp(28px, 3vw, 38
 .inventory-section-tabs { margin-bottom: 16px; }
 .inventory-date-label { display: flex; align-items: center; gap: 9px; color: var(--forest-800); font-size: 12px; font-weight: 800; }
 .inventory-date-label input { min-height: 39px; padding: 5px 9px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: #fff; }
+#inventoryDate { border: 2px solid #a8231e; color: #fff; background: #c5362e; font-weight: 800; }
+#inventoryDate::-webkit-calendar-picker-indicator { filter: invert(1); }
 .inventory-date-label select { min-height: 39px; padding: 5px 9px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: #fff; }
 .inventory-date-label[hidden] { display: none; }
+#inventoryDayLabel { width: 100%; justify-content: space-between; margin-bottom: 12px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--leaf-pale); font-size: 12px; }
+#inventoryDay { width: 135px; min-height: 38px; font-size: 14px; font-weight: 800; }
 .inventory-history-toggle { min-height: 39px; padding: 7px 11px; font-size: 11px; }
 .inventory-history-toggle[hidden] { display: none; }
 .report-actions { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -379,6 +383,7 @@ h1 { margin: 5px 0 5px; color: var(--forest-950); font-size: clamp(28px, 3vw, 38
 .inventory-farm-summary strong { margin: 5px 0; color: var(--forest-950); font-size: 28px; }
 .inventory-farm-summary small { color: var(--muted); font-size: 11px; }
 .inventory-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
+.role-postharvest #inventoryMetrics { display: none; }
 .inventory-metrics article { padding: 14px 17px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); }
 .inventory-metrics span, .inventory-metrics strong { display: block; }
 .inventory-metrics span { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .06em; }
@@ -449,6 +454,7 @@ body.capture-open .view.active { animation: none; }
 .inventory-expanded .page-heading p, .inventory-expanded .page-heading .eyebrow { display: none; }
 .inventory-expanded .inventory-toolbar, .inventory-expanded .inventory-section-tabs { flex: none; margin: 8px 10px; }
 .inventory-expanded .inventory-farm-summary, .inventory-expanded .inventory-metrics { display: none; }
+.role-viewer .inventory-expanded .inventory-metrics { display: grid; }
 .inventory-expanded #inventoryEditor { flex: 1; min-height: 0; padding: 0 10px 10px; overflow: auto; overscroll-behavior: contain; }
 .inventory-expanded .inventory-card { box-shadow: none; }
 
@@ -634,6 +640,8 @@ body.capture-open .view.active { animation: none; }
   .inventory-farm-summary .button { width: 100%; }
   .inventory-toolbar { align-items: stretch; }
   .inventory-date-label { width: 100%; justify-content: space-between; }
+  #inventoryDayLabel { flex-direction: row; align-items: center; gap: 10px; font-size: 12px; }
+  #inventoryDay { width: 125px; min-height: 39px; font-size: 14px; }
   .inventory-tabs { width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
   .inventory-tabs button { min-width: 0; padding: 9px 5px; font-size: 10px; }
   .inventory-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
