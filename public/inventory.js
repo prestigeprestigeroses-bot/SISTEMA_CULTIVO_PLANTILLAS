@@ -5,7 +5,6 @@
     sections: document.querySelector('#inventorySections'),
     date: document.querySelector('#inventoryDate'),
     dateCaption: document.querySelector('#inventoryDateCaption'),
-    historyToggle: document.querySelector('#inventoryHistoryToggle'),
     day: document.querySelector('#inventoryDay'),
     dayLabel: document.querySelector('#inventoryDayLabel'),
     metrics: document.querySelector('#inventoryMetrics'),
@@ -144,9 +143,6 @@
     ui.date.max = localDate();
     ui.date.value = model.date;
     ui.dateCaption.textContent = 'Fecha del inventario';
-    ui.historyToggle.hidden = model.date >= localDate() && !model.historical;
-    ui.historyToggle.textContent = model.historical ? '← Volver a editar' : 'Ver cierre de esta fecha';
-    ui.historyToggle.setAttribute('aria-pressed', String(model.historical));
     ui.dayLabel.hidden = false;
     ui.day.disabled = false;
     ui.day.innerHTML = Array.from({ length: 31 }, (_, index) =>
@@ -243,7 +239,7 @@
 
   function renderEditor() {
     if (!model.template || !model.data) {
-      ui.editor.innerHTML = `<p class="${model.historical ? 'inventory-history-note' : 'inventory-note'}">${model.historical ? `No hay una copia detallada del inventario guardada para esta fecha. ${model.snapshot?.saved ? `Total mensual al ${escapeHtml(model.snapshot.recordedDate)}: ${format(model.snapshot.totalStems)} tallos.` : 'No hay registros guardados hasta esa fecha.'}` : 'Cargando inventario…'}</p>`;
+      ui.editor.innerHTML = `<p class="${model.historical ? 'inventory-history-note' : 'inventory-note'}">${model.historical ? `No hay una copia detallada del inventario guardada para esta fecha. ${model.snapshot?.saved ? `Total mensual al ${escapeHtml(model.snapshot.recordedDate)}: ${format(model.snapshot.totalStems)} tallos.` : 'No hay registros guardados hasta esa fecha.'} Para ingresar flor de días anteriores, vuelve a la fecha de hoy y elige el Día de la flor.` : 'Cargando inventario…'}</p>`;
       ui.metrics.innerHTML = '';
       ui.save.textContent = model.historical ? 'Consulta histórica' : '✓ Guardar inventario';
       return;
@@ -308,6 +304,8 @@
     const farmId = Number(document.querySelector('#farmSelect').value);
     if (!farmId || (model.farmId === farmId && model.templates.length)) return;
     model.farmId = farmId;
+    model.date = localDate();
+    model.gridDay = null;
     model.historical = false;
     model.key = null;
     model.template = null;
@@ -316,7 +314,6 @@
     try {
       model.templates = await api(`/api/inventory/templates/${farmId}`);
       model.key = model.templates[0]?.key || null;
-      if (model.key === 'p2') { model.date = localDate(); model.gridDay = null; }
       renderTabs();
       await loadTemplate();
     } catch (error) {
@@ -419,14 +416,8 @@
       model.date = oldDate; renderTabs(); return;
     }
     model.date = nextDate;
-    if (nextDate >= localDate()) model.historical = false;
+    model.historical = nextDate < localDate();
     if (oldMonth !== nextMonth) model.farmSummary = null;
-    await loadTemplate();
-  });
-  ui.historyToggle.addEventListener('click', async () => {
-    if (!model.key || (!model.historical && model.date >= localDate())) return;
-    if (!model.historical && !(await autosave.flush())) return;
-    model.historical = !model.historical;
     await loadTemplate();
   });
   ui.day.addEventListener('change', () => {
