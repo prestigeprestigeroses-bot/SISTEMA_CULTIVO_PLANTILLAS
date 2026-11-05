@@ -33,9 +33,7 @@
 
   function period() {
     const [year, month, calendarDay] = model.date.split('-').map(Number);
-    const extended = model.key === 'p2' || year * 100 + month >= 202612;
-    return { year, month, day: extended ? (model.gridDay || calendarDay) : calendarDay,
-      days: extended ? 31 : new Date(year, month, 0).getDate(), extended };
+    return { year, month, calendarDay, day: model.gridDay || calendarDay, days: 31, extended: true };
   }
 
   function format(value) { return new Intl.NumberFormat('es-CO').format(value || 0); }
@@ -132,7 +130,8 @@
     ui.templates.innerHTML = model.templates.map((item) => `<button type="button" data-template="${item.key}" class="${item.key === model.key ? 'active' : ''}">${escapeHtml(item.label)}</button>`).join('');
     const available = model.template?.sections || Object.keys(sectionNames);
     ui.sections.innerHTML = available.map((key) => `<button type="button" data-inventory-section="${key}" class="${key === model.section ? 'active' : ''}">${sectionNames[key]}</button>`).join('');
-    const { extended, day } = period();
+    const { year, month, calendarDay, day } = period();
+    const lastCalendarDay = new Date(year, month, 0).getDate();
     ui.date.type = 'date';
     ui.date.max = localDate();
     ui.date.value = model.date;
@@ -140,10 +139,11 @@
     ui.historyToggle.hidden = model.date >= localDate() && !model.historical;
     ui.historyToggle.textContent = model.historical ? '← Volver a editar' : 'Ver cierre de esta fecha';
     ui.historyToggle.setAttribute('aria-pressed', String(model.historical));
-    ui.dayLabel.hidden = !extended || model.key === 'p2';
+    ui.dayLabel.hidden = lastCalendarDay === 31;
     ui.day.disabled = model.historical;
-    if (extended) ui.day.innerHTML = Array.from({ length: period().days }, (_, index) =>
-      `<option value="${index + 1}" ${index + 1 === day ? 'selected' : ''}>Día ${index + 1}</option>`).join('');
+    ui.day.innerHTML = `<option value="${calendarDay}" ${day === calendarDay ? 'selected' : ''}>Fecha seleccionada · ${calendarDay}</option>` +
+      Array.from({ length: 31 - lastCalendarDay }, (_, index) => lastCalendarDay + index + 1)
+        .map((extraDay) => `<option value="${extraDay}" ${day === extraDay ? 'selected' : ''}>Día ${extraDay}</option>`).join('');
   }
 
   function processedEditor(result) {
@@ -243,7 +243,8 @@
     }
     const result = summary();
     const historyNote = model.historical ? `<p class="inventory-history-note">Inventario guardado al ${escapeHtml(model.snapshot?.recordedDate || model.date)} · Total mensual hasta esa fecha: ${format(model.snapshot?.totalStems)} tallos · Solo lectura.</p>` : '';
-    ui.editor.innerHTML = `${historyNote}<section class="inventory-card inventory-template-${model.key}"><h2>${sectionNames[model.section]} · ${escapeHtml(model.template.label)}</h2>${model.section === 'processed' ? processedEditor(result) : gridEditor(result)}${model.monthView ? mobileMonthEditor() : ''}</section>`;
+    const captureMonth = new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric' }).format(new Date(period().year, period().month - 1, 1));
+    ui.editor.innerHTML = `${historyNote}<section class="inventory-card inventory-template-${model.key}"><h2>${sectionNames[model.section]} · ${escapeHtml(model.template.label)}</h2><div class="inventory-selected-date">${model.historical ? 'Consulta' : 'Captura'} · Día ${period().day} de ${captureMonth}</div>${model.section === 'processed' ? processedEditor(result) : gridEditor(result)}${model.monthView ? mobileMonthEditor() : ''}</section>`;
     ui.view.classList.toggle('inventory-month-mode', model.monthView);
     renderMetrics();
   }

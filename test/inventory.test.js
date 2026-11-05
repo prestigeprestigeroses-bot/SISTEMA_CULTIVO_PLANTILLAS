@@ -3,15 +3,18 @@ const assert = require('node:assert/strict');
 const { templates, inventoryTemplate, blankInventory, inventoryDays, carryInventoryToNewMonth, normalizeInventory, inventorySummary, inventoryMonthSummary } = require('../src/inventory');
 const db = require('../src/db');
 
-test('P2 usa 31 posiciones desde ahora y P1 las activa en diciembre de 2026', () => {
+test('P1 y P2 admiten 31 posiciones en todos los meses', () => {
   const p1 = inventoryTemplate('p1', 'F1');
+  const transfer = inventoryTemplate('p1_p2', 'F1');
   const p2 = inventoryTemplate('p2', 'F2');
-  assert.equal(inventoryDays(p1, 2026, 11), 30);
+  assert.equal(inventoryDays(p1, 2026, 11), 31);
   assert.equal(inventoryDays(p1, 2026, 12), 31);
   assert.equal(inventoryDays(p1, 2027, 2), 31);
+  assert.equal(inventoryDays(transfer, 2027, 2), 31);
   assert.equal(inventoryDays(p2, 2026, 11), 31);
   assert.equal(inventoryDays(p2, 2027, 2), 31);
-  assert.throws(() => normalizeInventory(p1, 2026, 11, { bulk: { '0:31': 1 } }));
+  assert.equal(normalizeInventory(p1, 2026, 11, { bulk: { '0:31': 1 } }).bulk['0:31'], 1);
+  assert.equal(normalizeInventory(p1, 2027, 2, { processed: { '31:0:B': 2 } }).processed['31:0:B'], 2);
   assert.equal(normalizeInventory(p1, 2026, 12, { processed: { '31:0:B': 2 } }).processed['31:0:B'], 2);
   assert.equal(normalizeInventory(p2, 2027, 2, { guard: { '0:31': 3 } }).guard['0:31'], 3);
   const february = inventoryMonthSummary(p2, { bulk: { '0:31': 2 }, guard: {} }, 2027, 2);

@@ -26,8 +26,7 @@ function availableSections(template) {
 }
 
 function inventoryDays(template, year, month) {
-  return template.farmCode === 'F2' || year * 100 + month >= 202612
-    ? 31 : new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return 31;
 }
 
 function inventoryCarriesOver(template, year, month) {

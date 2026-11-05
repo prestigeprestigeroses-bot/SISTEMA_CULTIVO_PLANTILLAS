@@ -427,6 +427,7 @@ h1 { margin: 5px 0 5px; color: var(--forest-950); font-size: clamp(28px, 3vw, 38
 .inventory-table tfoot th, .inventory-table tfoot td { position: sticky; bottom: 0; z-index: 2; background: var(--leaf-pale); font-weight: 800; }
 .inventory-table tfoot .inventory-identity { z-index: 3; background: var(--leaf-pale); }
 .inventory-mobile-capture { display: none; }
+.inventory-selected-date { display: none; }
 #inventoryMonthToggle, .inventory-month-view { display: none; }
 body.capture-open { overflow: hidden; }
 body.capture-open .view.active { animation: none; }
@@ -642,8 +643,10 @@ body.capture-open .view.active { animation: none; }
   .inventory-card h2 { padding: 12px; font-size: 14px; }
   .inventory-table-scroll { display: none; }
   .inventory-mobile-capture { display: block; padding: 10px; }
+  .inventory-selected-date { display: block; margin: 7px 10px 0; padding: 7px 10px; border-radius: 7px; background: var(--leaf-pale); color: var(--forest-900); font-size: 11px; font-weight: 800; }
   #inventoryMonthToggle { display: inline-flex; }
   .inventory-month-mode .inventory-mobile-capture { display: none; }
+  .inventory-month-mode .inventory-selected-date { display: none; }
   .inventory-month-mode .inventory-month-view { display: block; }
   .inventory-month-view > p { margin: 0; padding: 9px 11px; color: var(--forest-800); font-size: 11px; }
   .inventory-month-scroll { width: 100%; max-height: 68dvh; overflow: auto; overscroll-behavior: contain; }
