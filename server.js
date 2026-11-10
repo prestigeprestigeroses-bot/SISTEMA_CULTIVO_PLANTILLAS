@@ -60,15 +60,17 @@ function sendWorkbook(res, buffer, filename) {
   res.send(buffer);
 }
 
-async function farmInventorySummary(farm, year, month) {
+async function farmInventorySummary(farm, year, month, processedDay = Number(db.inventoryEntryDate().slice(-2))) {
   const list = [];
   for (const [key, source] of Object.entries(templates)) {
     if (source.farmCode !== farm.code) continue;
     const template = inventoryTemplate(key, farm.code);
     const { data, saved } = await db.getInventory(farm.id, key, year, month);
-    list.push({ key, label: template.label, saved, summary: inventoryMonthSummary(template, data, year, month) });
+    list.push({ key, label: template.label, saved,
+      summary: inventoryMonthSummary(template, data, year, month, { processedDay }) });
   }
-  return { farmId: farm.id, year, month, inventories: list, totalStems: list.reduce((sum, item) => sum + item.summary.stems, 0) };
+  return { farmId: farm.id, year, month, processedDay, inventories: list,
+    totalStems: list.reduce((sum, item) => sum + item.summary.stems, 0) };
 }
 
 app.get('/api/health', asyncRoute(async (_req, res) => {
@@ -211,7 +213,8 @@ app.get('/api/reports/inventory/:farmId/:templateKey/:year/:month.xlsx', auth.re
   const { year, month } = validateInventoryPeriod(req.params.year, req.params.month);
   const template = inventoryTemplate(req.params.templateKey, farm.code);
   const { data } = await db.getInventory(farm.id, req.params.templateKey, year, month);
-  const buffer = await buildInventoryWorkbook({ farm, template, year, month, data });
+  const buffer = await buildInventoryWorkbook({ farm, template, year, month, data,
+    processedDay: Number(db.inventoryEntryDate().slice(-2)) });
   sendWorkbook(res, buffer, `Inventario_${farm.code}_${req.params.templateKey}_${year}_${String(month).padStart(2, '0')}.xlsx`);
 }));
 
@@ -219,7 +222,8 @@ app.get('/api/reports/inventory-summary/:farmId/:year/:month.xlsx', auth.require
   const farm = await farmById(validateFarmId(req.params.farmId));
   const { year, month } = validateInventoryPeriod(req.params.year, req.params.month);
   const result = await farmInventorySummary(farm, year, month);
-  const buffer = await buildFarmInventoryWorkbook({ farm, year, month, summaries: result.inventories });
+  const buffer = await buildFarmInventoryWorkbook({ farm, year, month,
+    summaries: result.inventories, processedDay: result.processedDay });
   sendWorkbook(res, buffer, `Total_inventarios_${farm.code}_${year}_${String(month).padStart(2, '0')}.xlsx`);
 }));
 

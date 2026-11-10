@@ -77,7 +77,7 @@ async function buildFieldWorkbook({ farm, year, week, data, kind }) {
   return workbook.xlsx.writeBuffer();
 }
 
-function addInventorySection(workbook, farm, period, template, data, section, year, month) {
+function addInventorySection(workbook, farm, period, template, data, section, year, month, processedDay) {
   const sheet = setupSheet(workbook, SECTION_NAMES[section], `${SECTION_NAMES[section].toUpperCase()} · ${template.label.toUpperCase()}`,
     farm, period, section === 'processed'
       ? ['DÍA', 'VARIEDAD', 'LÁMINA', 'GRADO', 'UNIDADES', 'TALLOS / UNIDAD', 'TALLOS']
@@ -101,19 +101,25 @@ function addInventorySection(workbook, farm, period, template, data, section, ye
     }
   }
   const monthSummary = inventoryMonthSummary(template, data, year, month).sections[section];
-  const totals = section === 'processed'
-    ? [null, null, null, monthSummary.units, null, monthSummary.stems]
-    : [null, monthSummary.units, null, monthSummary.stems];
-  appendTotals(sheet, 'TOTAL MES', totals);
+  if (section === 'processed' && processedDay !== undefined) {
+    const current = inventoryMonthSummary(template, data, year, month, { processedDay }).sections.processed;
+    appendTotals(sheet, `TOTAL DÍA ${processedDay}`, [null, null, null, current.units, null, current.stems]);
+    appendTotals(sheet, 'HISTÓRICO 31 DÍAS', [null, null, null, monthSummary.units, null, monthSummary.stems]);
+  } else {
+    const totals = section === 'processed'
+      ? [null, null, null, monthSummary.units, null, monthSummary.stems]
+      : [null, monthSummary.units, null, monthSummary.stems];
+    appendTotals(sheet, 'TOTAL MES', totals);
+  }
   sheet.addRow(['FN se registra en tallos directos. Las cantidades sin factor no se suman como tallos.']);
   return sheet;
 }
 
-async function buildInventoryWorkbook({ farm, template, year, month, data }) {
+async function buildInventoryWorkbook({ farm, template, year, month, data, processedDay }) {
   const normalized = normalizeInventory(template, year, month, data);
   const workbook = newWorkbook();
-  const period = `${year}-${String(month).padStart(2, '0')}`;
-  const summary = inventoryMonthSummary(template, normalized, year, month);
+  const period = `${year}-${String(month).padStart(2, '0')}${template.processed && processedDay !== undefined ? ` · Ramos día ${processedDay}` : ''}`;
+  const summary = inventoryMonthSummary(template, normalized, year, month, { processedDay });
   const sheet = setupSheet(workbook, 'Resumen', `INVENTARIO · ${template.label.toUpperCase()}`, farm, period,
     ['SECCIÓN', 'TALLOS', 'TABACOS / UNIDADES', 'FN TALLOS', 'SIN CONVERSIÓN']);
   for (const section of availableSections(template)) {
@@ -121,13 +127,13 @@ async function buildInventoryWorkbook({ farm, template, year, month, data }) {
     sheet.addRow([SECTION_NAMES[section], item.stems, item.units, item.fnStems, item.unweighted]);
   }
   appendTotals(sheet, 'TOTAL INVENTARIO', [summary.stems]);
-  for (const section of availableSections(template)) addInventorySection(workbook, farm, period, template, normalized, section, year, month);
+  for (const section of availableSections(template)) addInventorySection(workbook, farm, period, template, normalized, section, year, month, processedDay);
   return workbook.xlsx.writeBuffer();
 }
 
-async function buildFarmInventoryWorkbook({ farm, year, month, summaries }) {
+async function buildFarmInventoryWorkbook({ farm, year, month, summaries, processedDay }) {
   const workbook = newWorkbook();
-  const period = `${year}-${String(month).padStart(2, '0')}`;
+  const period = `${year}-${String(month).padStart(2, '0')}${farm.code === 'F1' && processedDay !== undefined ? ` · Ramos día ${processedDay}` : ''}`;
   const sheet = setupSheet(workbook, 'Total finca', 'TALLOS DE TODOS LOS INVENTARIOS', farm, period,
     ['INVENTARIO', 'SECCIÓN', 'TALLOS']);
   let total = 0;
@@ -136,8 +142,10 @@ async function buildFarmInventoryWorkbook({ farm, year, month, summaries }) {
       sheet.addRow([item.label, SECTION_NAMES[section], values.stems]);
       total += values.stems;
     }
+    appendTotals(sheet, `TOTAL ${item.label.toUpperCase()}`, [null, item.summary.stems]);
   }
   appendTotals(sheet, 'TOTAL FINCA', [null, total]);
+  sheet.getColumn(1).width = 35;
   sheet.getColumn(2).width = 25;
 
   const inventories = summaries.map((item) => item.label);

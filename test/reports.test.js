@@ -58,6 +58,26 @@ test('Excel P1 distingue grado y tabacos en granel y guarde', async () => {
   assert.equal(workbook.getWorksheet('Flor de guarde').getCell('D4').value, 'TALLOS / TABACO');
 });
 
+test('Excel P1 usa solo el inventario ramos del día consultado y conserva el histórico', async () => {
+  const template = inventoryTemplate('p1', 'F1');
+  const data = blankInventory();
+  data.processed['9:0:B'] = 2;
+  data.processed['10:0:B'] = 3;
+  data.bulk['0:28'] = 1;
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(await buildInventoryWorkbook({ farm: p1, template,
+    year: 2026, month: 11, data, processedDay: 10 }));
+  const summary = workbook.getWorksheet('Resumen');
+  assert.equal(summary.getCell('B5').value, 18);
+  assert.equal(summary.getCell('B6').value, template.bulk[0].stemsPerBunch);
+  assert.equal(summary.getCell('B8').value, 18 + template.bulk[0].stemsPerBunch);
+  const ramos = workbook.getWorksheet('Inventario ramos');
+  assert.equal(ramos.getCell('A7').value, 'TOTAL DÍA 10');
+  assert.equal(ramos.getCell('G7').value, 18);
+  assert.equal(ramos.getCell('A8').value, 'HISTÓRICO 31 DÍAS');
+  assert.equal(ramos.getCell('G8').value, 30);
+});
+
 test('Excel de guarde P2 usa la nueva lista sin exportar variedades retiradas', async () => {
   const template = inventoryTemplate('p2', 'F2');
   const data = blankInventory();
@@ -99,7 +119,11 @@ test('Excel total finca P1 suma cada variedad entre sus dos inventarios sin mezc
   assert.deepEqual([rowFor('FREEDOM').getCell(2).value, rowFor('FREEDOM').getCell(3).value, rowFor('FREEDOM').getCell(4).value], [12, 0, 12]);
   assert.deepEqual([rowFor('FREEDOM CORTO').getCell(2).value, rowFor('FREEDOM CORTO').getCell(3).value, rowFor('FREEDOM CORTO').getCell(4).value], [132, 111, 243]);
   assert.deepEqual([rowFor('TOTAL FINCA').getCell(2).value, rowFor('TOTAL FINCA').getCell(3).value, rowFor('TOTAL FINCA').getCell(4).value], [144, 111, 255]);
-  assert.equal(workbook.getWorksheet('Total finca').getCell('C9').value, 255);
+  const main = workbook.getWorksheet('Total finca');
+  const totalRow = (label) => main.getRows(5, main.rowCount - 4).find((row) => row.getCell(1).value === label);
+  assert.equal(totalRow('TOTAL INVENTARIO P1').getCell(3).value, 144);
+  assert.equal(totalRow('TOTAL FLOR QUE AMANECE DE P2').getCell(3).value, 111);
+  assert.equal(totalRow('TOTAL FINCA').getCell(3).value, 255);
 });
 
 test('Excel total finca P2 suma granel y guarde por variedad y omite filas retiradas', async () => {
@@ -117,5 +141,8 @@ test('Excel total finca P2 suma granel y guarde por variedad y omite filas retir
   assert.equal(sheet.getCell('A5').value, 'FREEDOM CORTO');
   assert.equal(sheet.getCell('B5').value, 125);
   assert.equal(sheet.getCell('B6').value, 125);
-  assert.equal(workbook.getWorksheet('Total finca').getCell('C7').value, 125);
+  const main = workbook.getWorksheet('Total finca');
+  const totalRow = (label) => main.getRows(5, main.rowCount - 4).find((row) => row.getCell(1).value === label);
+  assert.equal(totalRow('TOTAL INVENTARIO P2').getCell(3).value, 125);
+  assert.equal(totalRow('TOTAL FINCA').getCell(3).value, 125);
 });

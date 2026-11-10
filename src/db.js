@@ -209,21 +209,23 @@ async function getInventory(farmId, templateKey, year, month) {
   return { data: blankInventory(), saved: false };
 }
 
-async function completeInventorySnapshot(farmId, farmCode, year, month, saved) {
+async function completeInventorySnapshot(farmId, farmCode, year, month, saved, snapshotDate) {
   for (const [key, source] of Object.entries(templates)) {
     if (source.farmCode !== farmCode || saved.has(key)) continue;
     saved.set(key, (await getInventory(farmId, key, year, month)).data);
   }
-  return inventorySnapshot(farmId, farmCode, year, month, saved);
+  return inventorySnapshot(farmId, farmCode, year, month, saved, snapshotDate);
 }
 
-function inventorySnapshot(farmId, farmCode, year, month, savedInventories) {
+function inventorySnapshot(farmId, farmCode, year, month, savedInventories, snapshotDate) {
   const inventories = Object.entries(templates)
     .filter(([, source]) => source.farmCode === farmCode)
     .map(([key]) => {
       const template = inventoryTemplate(key, farmCode);
       const data = savedInventories.get(key) || blankInventory();
-      return { key, stems: inventoryMonthSummary(template, data, year, month).stems,
+      const summary = inventoryMonthSummary(template, data, year, month,
+        { processedDay: Number(snapshotDate.slice(-2)) });
+      return { key, stems: summary.stems, sections: summary.sections,
         data: JSON.parse(JSON.stringify(data)) };
     });
   return { farmId: Number(farmId), year, month, inventories,
@@ -244,7 +246,7 @@ async function saveInventory(farmId, templateKey, template, year, month, input, 
       if (value) saved.set(inventoryKey, value);
     }
     memory.inventorySnapshots.set(`${farmId}:${year}:${month}:${snapshotDate}`,
-      await completeInventorySnapshot(farmId, farmCode, year, month, saved));
+      await completeInventorySnapshot(farmId, farmCode, year, month, saved, snapshotDate));
   } else {
     const client = await pool.connect();
     try {
@@ -267,7 +269,7 @@ async function saveInventory(farmId, templateKey, template, year, month, input, 
         [farmId, year, month],
       );
       const saved = new Map(all.rows.map((row) => [row.template_key, row.payload]));
-      const snapshot = await completeInventorySnapshot(farmId, farmCode, year, month, saved);
+      const snapshot = await completeInventorySnapshot(farmId, farmCode, year, month, saved, snapshotDate);
       await client.query(`
         INSERT INTO inventory_daily_snapshots (farm_id, inventory_year, inventory_month, snapshot_date, payload)
         VALUES ($1, $2, $3, $4::date, $5::jsonb)
@@ -301,8 +303,15 @@ async function getInventorySnapshot(farmId, year, month, snapshotDate) {
     snapshot = rows[0]?.payload || null;
     recordedDate = rows[0]?.recorded_date || null;
   }
+  const inventories = (snapshot?.inventories || []).map((item) => {
+    const source = templates[item.key];
+    if (!source || !item.data) return item;
+    const summary = inventoryMonthSummary(inventoryTemplate(item.key, source.farmCode), item.data,
+      year, month, { processedDay: Number(recordedDate.slice(-2)) });
+    return { ...item, stems: summary.stems, sections: summary.sections };
+  });
   return { farmId: Number(farmId), year, month, snapshotDate, saved: Boolean(snapshot),
-    recordedDate, inventories: snapshot?.inventories || [], totalStems: snapshot?.totalStems ?? null };
+    recordedDate, inventories, totalStems: snapshot ? inventories.reduce((sum, item) => sum + item.stems, 0) : null };
 }
 
 async function initializeInventoryMonth(farmId, farmCode, year, month) {
@@ -485,4 +494,4 @@ async function health() {
   return { database: 'postgresql', persistent: true };
 }
 
-module.exports = { migrate, getFarms, getWeek, getWeekWithDefaults, replaceWeek, getHistory, getFieldData, saveFieldData, getInventory, saveInventory, initializeInventoryMonth, getInventorySnapshot, health };
+module.exports = { migrate, getFarms, getWeek, getWeekWithDefaults, replaceWeek, getHistory, getFieldData, saveFieldData, getInventory, saveInventory, initializeInventoryMonth, getInventorySnapshot, inventoryEntryDate, health };

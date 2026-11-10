@@ -72,7 +72,7 @@ test('estado diario conserva el total con que quedó el inventario de cada finca
   const entered = new Date('2045-07-28T15:00:00Z');
   const later = new Date('2045-07-29T15:00:00Z');
   const own = blankInventory();
-  own.processed['1:0:B'] = 2; // 12 tallos, aunque la columna sea del día 1.
+  own.processed['28:0:B'] = 2; // El inventario ramos del día 28 es un dato único.
   own.bulk['0:FN'] = 7; // FN son tallos directos.
   own.guard['0:3'] = 1;
   await db.saveInventory(1, 'p1', p1, 2045, 7, own, entered);
@@ -80,12 +80,12 @@ test('estado diario conserva el total con que quedó el inventario de cada finca
   await db.saveInventory(1, 'p1_p2', transfer, 2045, 7, transferData, entered);
   const p2Data = { bulk: { '0:2': 1 }, guard: {} };
   await db.saveInventory(2, 'p2', p2, 2045, 7, p2Data, entered);
-  const ownStems = inventoryMonthSummary(p1, own, 2045, 7).stems;
+  const ownStems = inventoryMonthSummary(p1, own, 2045, 7, { processedDay: 28 }).stems;
   const transferStems = inventoryMonthSummary(transfer, transferData, 2045, 7).stems;
   const p2Stems = inventoryMonthSummary(p2, p2Data, 2045, 7).stems;
   assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-27')).saved, false);
   assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-28')).totalStems, ownStems + transferStems);
-  assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-28')).inventories.find((item) => item.key === 'p1').data.processed['1:0:B'], 2);
+  assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-28')).inventories.find((item) => item.key === 'p1').data.processed['28:0:B'], 2);
   assert.equal((await db.getInventorySnapshot(2, 2045, 7, '2045-07-28')).totalStems, p2Stems);
   p2Data.guard['0:3'] = 2;
   await db.saveInventory(2, 'p2', p2, 2045, 7, p2Data, later);
@@ -94,12 +94,12 @@ test('estado diario conserva el total con que quedó el inventario de cada finca
     p2Stems + 2 * p2.guard[0].stemsPerBunch);
   await db.saveInventory(1, 'p1', p1, 2045, 7, own, entered);
   assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-28')).totalStems, ownStems + transferStems);
-  own.processed['1:0:B'] = 3;
+  own.processed['29:0:B'] = 3;
   await db.saveInventory(1, 'p1', p1, 2045, 7, own, later);
   assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-29')).totalStems, ownStems + transferStems + 6);
   assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-28')).totalStems, ownStems + transferStems);
-  assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-28')).inventories.find((item) => item.key === 'p1').data.processed['1:0:B'], 2);
-  assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-29')).inventories.find((item) => item.key === 'p1').data.processed['1:0:B'], 3);
+  assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-28')).inventories.find((item) => item.key === 'p1').data.processed['28:0:B'], 2);
+  assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-29')).inventories.find((item) => item.key === 'p1').data.processed['29:0:B'], 3);
   assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-30')).recordedDate, '2045-07-29');
   assert.equal((await db.getInventorySnapshot(1, 2045, 7, '2045-07-30')).totalStems, ownStems + transferStems + 6);
 });
@@ -319,6 +319,12 @@ test('total mensual de tallos suma secciones y respeta inventario solo granel', 
   data.guard['0:1'] = 3;
   const full = inventoryMonthSummary(templates.p1, data, 2026, 10);
   assert.equal(full.sections.processed.stems, 18);
+  const current = inventoryMonthSummary(templates.p1, data, 2026, 10, { processedDay: 2 });
+  assert.equal(current.sections.processed.stems, 6);
+  assert.equal(current.sections.bulk.stems, full.sections.bulk.stems);
+  assert.equal(current.sections.guard.stems, full.sections.guard.stems);
+  assert.equal(current.stems, full.stems - 12);
+  assert.throws(() => inventoryMonthSummary(templates.p1, data, 2026, 10, { processedDay: 32 }));
   assert.equal(full.sections.bulk.stems, 2 * templates.p1.bulk[0].stemsPerBunch + 7);
   assert.equal(full.sections.guard.stems, 3 * templates.p1.guard[0].stemsPerBunch);
   assert.equal(full.stems, Object.values(full.sections).reduce((sum, item) => sum + item.stems, 0));

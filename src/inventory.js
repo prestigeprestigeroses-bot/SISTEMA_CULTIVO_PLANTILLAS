@@ -110,18 +110,23 @@ function inventorySummary(template, data, section, selectedDay) {
   return { details, totals };
 }
 
-function inventoryMonthSummary(template, data, year, month) {
+function inventoryMonthSummary(template, data, year, month, { processedDay } = {}) {
   const normalized = normalizeInventory(template, year, month, data);
   const sections = availableSections(template);
   const days = inventoryDays(template, year, month);
+  if (processedDay !== undefined && (!Number.isInteger(processedDay) || processedDay < 1 || processedDay > days)) {
+    throw new Error('Día de inventario inválido');
+  }
   const byVariety = new Map();
   const dailyStems = Array(days).fill(0);
   const bySection = Object.fromEntries(sections.map((section) => {
     const summaries = section === 'processed'
-      ? Array.from({ length: days }, (_, day) => inventorySummary(template, normalized, section, day + 1))
+      ? (processedDay === undefined
+        ? Array.from({ length: days }, (_, day) => inventorySummary(template, normalized, section, day + 1))
+        : [inventorySummary(template, normalized, section, processedDay)])
       : [inventorySummary(template, normalized, section, 1)];
     if (section === 'processed') {
-      summaries.forEach((summary, index) => { dailyStems[index] += summary.totals.stems; });
+      summaries.forEach((summary, index) => { dailyStems[(processedDay ?? (index + 1)) - 1] += summary.totals.stems; });
     } else {
       template[section].forEach((row, index) => {
         if (row.retired || row.stemsPerBunch === null) return;

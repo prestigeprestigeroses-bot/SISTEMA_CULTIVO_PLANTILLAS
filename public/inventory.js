@@ -18,6 +18,10 @@
     farmBreakdown: document.querySelector('#inventoryFarmBreakdown'),
   };
   const sectionNames = { processed: 'Inventario ramos', bulk: 'Flor a granel', guard: 'Flor de guarde' };
+  function sectionBreakdown(inventories, processedDay) {
+    return inventories.flatMap((item) => Object.entries(item.summary?.sections || item.sections || {}).map(([section, values]) =>
+      `${item.key === 'p1_p2' ? item.label : sectionNames[section]}${section === 'processed' ? ` (día ${processedDay})` : ''}: ${format(values.stems)} tallos`)).join('\n');
+  }
   const model = {
     farmId: null, templates: [], key: null, template: null, data: null,
     section: 'processed', date: localDate(), variety: 0, process: null, gridDay: null,
@@ -106,9 +110,7 @@
     const farmId = model.farmId;
     const selectedDate = model.date;
     const isPast = selectedDate < localDate();
-    ui.farmTotalCaption.textContent = isPast
-      ? `TOTAL TALLOS DE TODOS LOS INVENTARIOS DE ESTA FINCA · AL ${selectedDate}`
-      : 'TOTAL TALLOS DE TODOS LOS INVENTARIOS DE ESTA FINCA · MES SELECCIONADO';
+    ui.farmTotalCaption.textContent = `TOTAL TALLOS DE TODOS LOS INVENTARIOS DE ESTA FINCA · AL ${selectedDate}`;
     try {
       if (isPast) {
         const snapshot = model.historical && model.snapshot
@@ -117,7 +119,7 @@
         if (farmId !== model.farmId || selectedDate !== model.date) return;
         ui.farmTotal.textContent = snapshot.saved ? format(snapshot.totalStems) : '—';
         ui.farmBreakdown.textContent = snapshot.saved
-          ? `Cierre: ${snapshot.recordedDate} · ${snapshot.inventories.map((item) => `${model.templates.find((template) => template.key === item.key)?.label || item.key}: ${format(item.stems)}`).join(' · ')}`
+          ? `Cierre: ${snapshot.recordedDate}\n${sectionBreakdown(snapshot.inventories.map((item) => ({ ...item, label: model.templates.find((template) => template.key === item.key)?.label || item.key })), Number(snapshot.recordedDate.slice(-2)))}`
           : 'No hay cierre de inventario guardado para esta fecha.';
         return;
       }
@@ -125,7 +127,7 @@
       if (farmId !== model.farmId || selectedDate !== model.date) return;
       model.farmSummary = result;
       ui.farmTotal.textContent = format(result.totalStems);
-      ui.farmBreakdown.textContent = result.inventories.map((item) => `${item.label}: ${format(item.summary.stems)}`).join(' · ');
+      ui.farmBreakdown.textContent = sectionBreakdown(result.inventories, result.processedDay);
     } catch (error) {
       if (farmId !== model.farmId || selectedDate !== model.date) return;
       model.farmSummary = null;
