@@ -324,6 +324,9 @@ test('total mensual de tallos suma secciones y respeta inventario solo granel', 
   assert.equal(current.sections.bulk.stems, full.sections.bulk.stems);
   assert.equal(current.sections.guard.stems, full.sections.guard.stems);
   assert.equal(current.stems, full.stems - 12);
+  for (const [section, values] of Object.entries(current.sections)) {
+    assert.equal(current.varietiesBySection[section].reduce((sum, item) => sum + item.stems, 0), values.stems);
+  }
   assert.throws(() => inventoryMonthSummary(templates.p1, data, 2026, 10, { processedDay: 32 }));
   assert.equal(full.sections.bulk.stems, 2 * templates.p1.bulk[0].stemsPerBunch + 7);
   assert.equal(full.sections.guard.stems, 3 * templates.p1.guard[0].stemsPerBunch);

@@ -98,6 +98,7 @@ test('Excel total finca P1 suma cada variedad entre sus dos inventarios sin mezc
   const ownTemplate = inventoryTemplate('p1', 'F1');
   const own = blankInventory();
   own.processed['1:0:B'] = 2; // FREEDOM: 2 × 6 tallos.
+  own.processed['2:0:B'] = 5; // Histórico: no se suma al día 1.
   own.bulk['0:1'] = 2; // FREEDOM CORTO: 2 × 25 tallos.
   own.bulk['0:FN'] = 7; // FN son tallos directos.
   own.guard['0:2'] = 3; // FREEDOM CORTO: 3 × 25 tallos.
@@ -106,19 +107,19 @@ test('Excel total finca P1 suma cada variedad entre sus dos inventarios sin mezc
   fromP2.bulk['0:1'] = 4;
   fromP2.bulk['0:FN'] = 11;
   const summaries = [
-    { label: ownTemplate.label, summary: inventoryMonthSummary(ownTemplate, own, 2026, 10) },
+    { label: ownTemplate.label, summary: inventoryMonthSummary(ownTemplate, own, 2026, 10, { processedDay: 1 }) },
     { label: fromP2Template.label, summary: inventoryMonthSummary(fromP2Template, fromP2, 2026, 10) },
   ];
   const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(await buildFarmInventoryWorkbook({ farm: p1, year: 2026, month: 10, summaries }));
+  await workbook.xlsx.load(await buildFarmInventoryWorkbook({ farm: p1, year: 2026, month: 10, summaries, processedDay: 1 }));
   assert.deepEqual(workbook.worksheets.map((sheet) => sheet.name), ['Total finca', 'Por variedad']);
   const sheet = workbook.getWorksheet('Por variedad');
   const rowFor = (name) => sheet.getRows(5, sheet.rowCount - 4).find((row) => row.getCell(1).value === name);
-  assert.equal(sheet.getCell('B4').value, 'Inventario P1');
-  assert.equal(sheet.getCell('C4').value, 'Flor que amanece de P2');
-  assert.deepEqual([rowFor('FREEDOM').getCell(2).value, rowFor('FREEDOM').getCell(3).value, rowFor('FREEDOM').getCell(4).value], [12, 0, 12]);
-  assert.deepEqual([rowFor('FREEDOM CORTO').getCell(2).value, rowFor('FREEDOM CORTO').getCell(3).value, rowFor('FREEDOM CORTO').getCell(4).value], [132, 111, 243]);
-  assert.deepEqual([rowFor('TOTAL FINCA').getCell(2).value, rowFor('TOTAL FINCA').getCell(3).value, rowFor('TOTAL FINCA').getCell(4).value], [144, 111, 255]);
+  assert.deepEqual(sheet.getRow(4).values.slice(2),
+    ['Inventario ramos', 'Flor a granel', 'Flor de guarde', 'Flor que amanece de P2', 'TOTAL TALLOS']);
+  assert.deepEqual(rowFor('FREEDOM').values.slice(2), [12, 0, 0, 0, 12]);
+  assert.deepEqual(rowFor('FREEDOM CORTO').values.slice(2), [0, 57, 75, 111, 243]);
+  assert.deepEqual(rowFor('TOTAL FINCA').values.slice(2), [12, 57, 75, 111, 255]);
   const main = workbook.getWorksheet('Total finca');
   const totalRow = (label) => main.getRows(5, main.rowCount - 4).find((row) => row.getCell(1).value === label);
   assert.equal(totalRow('TOTAL INVENTARIO P1').getCell(3).value, 144);
@@ -137,10 +138,10 @@ test('Excel total finca P2 suma granel y guarde por variedad y omite filas retir
   await workbook.xlsx.load(await buildFarmInventoryWorkbook({ farm, year: 2026, month: 10,
     summaries: [{ label: template.label, summary: inventoryMonthSummary(template, data, 2026, 10) }] }));
   const sheet = workbook.getWorksheet('Por variedad');
-  assert.equal(sheet.getCell('B4').value, 'TOTAL TALLOS');
+  assert.deepEqual(sheet.getRow(4).values.slice(2), ['Flor a granel', 'Flor de guarde', 'TOTAL TALLOS']);
   assert.equal(sheet.getCell('A5').value, 'FREEDOM CORTO');
-  assert.equal(sheet.getCell('B5').value, 125);
-  assert.equal(sheet.getCell('B6').value, 125);
+  assert.deepEqual(sheet.getRow(5).values.slice(2), [50, 75, 125]);
+  assert.deepEqual(sheet.getRow(6).values.slice(2), [50, 75, 125]);
   const main = workbook.getWorksheet('Total finca');
   const totalRow = (label) => main.getRows(5, main.rowCount - 4).find((row) => row.getCell(1).value === label);
   assert.equal(totalRow('TOTAL INVENTARIO P2').getCell(3).value, 125);

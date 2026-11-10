@@ -118,8 +118,10 @@ function inventoryMonthSummary(template, data, year, month, { processedDay } = {
     throw new Error('Día de inventario inválido');
   }
   const byVariety = new Map();
+  const varietiesBySection = {};
   const dailyStems = Array(days).fill(0);
   const bySection = Object.fromEntries(sections.map((section) => {
+    const sectionVarieties = new Map();
     const summaries = section === 'processed'
       ? (processedDay === undefined
         ? Array.from({ length: days }, (_, day) => inventorySummary(template, normalized, section, day + 1))
@@ -140,8 +142,10 @@ function inventoryMonthSummary(template, data, year, month, { processedDay } = {
         if (!row.stems) continue;
         const name = String(row.name).trim().toUpperCase();
         byVariety.set(name, (byVariety.get(name) || 0) + row.stems);
+        sectionVarieties.set(name, (sectionVarieties.get(name) || 0) + row.stems);
       }
     }
+    varietiesBySection[section] = [...sectionVarieties].map(([name, stems]) => ({ name, stems }));
     const totals = summaries.reduce((acc, item) => {
       for (const key of Object.keys(acc)) acc[key] += item.totals[key];
       return acc;
@@ -152,6 +156,7 @@ function inventoryMonthSummary(template, data, year, month, { processedDay } = {
     sections: bySection,
     stems: Object.values(bySection).reduce((sum, totals) => sum + totals.stems, 0),
     varieties: [...byVariety].map(([name, stems]) => ({ name, stems })),
+    varietiesBySection,
     dailyStems,
   };
 }

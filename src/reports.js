@@ -148,28 +148,30 @@ async function buildFarmInventoryWorkbook({ farm, year, month, summaries, proces
   sheet.getColumn(1).width = 35;
   sheet.getColumn(2).width = 25;
 
-  const inventories = summaries.map((item) => item.label);
+  const columns = summaries.flatMap((item) => Object.keys(item.summary.sections).map((section) => ({
+    label: item.key === 'p1_p2' || item.label === 'Flor que amanece de P2' ? item.label : SECTION_NAMES[section],
+    varieties: item.summary.varietiesBySection?.[section] || [],
+  })));
   const breakdown = new Map();
-  for (let index = 0; index < summaries.length; index += 1) {
-    for (const variety of summaries[index].summary.varieties || []) {
-      if (!breakdown.has(variety.name)) breakdown.set(variety.name, Array(summaries.length).fill(0));
+  for (let index = 0; index < columns.length; index += 1) {
+    for (const variety of columns[index].varieties) {
+      if (!breakdown.has(variety.name)) breakdown.set(variety.name, Array(columns.length).fill(0));
       breakdown.get(variety.name)[index] += variety.stems;
     }
   }
-  const showInventories = inventories.length > 1;
   const varietySheet = setupSheet(workbook, 'Por variedad', 'TOTAL DE TALLOS POR VARIEDAD', farm, period,
-    ['VARIEDAD', ...(showInventories ? inventories : []), 'TOTAL TALLOS']);
+    ['VARIEDAD', ...columns.map((item) => item.label), 'TOTAL TALLOS']);
   varietySheet.getColumn(1).width = 29;
-  if (showInventories) inventories.forEach((_, index) => { varietySheet.getColumn(index + 2).width = 28; });
+  columns.forEach((_, index) => { varietySheet.getColumn(index + 2).width = 28; });
   for (let column = 2; column <= varietySheet.columnCount; column += 1) {
     varietySheet.getColumn(column).numFmt = '#,##0';
   }
-  const totalsByInventory = Array(summaries.length).fill(0);
+  const totalsBySection = Array(columns.length).fill(0);
   for (const [name, values] of [...breakdown].sort(([left], [right]) => left.localeCompare(right, 'es'))) {
-    values.forEach((value, index) => { totalsByInventory[index] += value; });
-    varietySheet.addRow([name, ...(showInventories ? values : []), values.reduce((sum, value) => sum + value, 0)]);
+    values.forEach((value, index) => { totalsBySection[index] += value; });
+    varietySheet.addRow([name, ...values, values.reduce((sum, value) => sum + value, 0)]);
   }
-  appendTotals(varietySheet, 'TOTAL FINCA', [...(showInventories ? totalsByInventory : []), total]);
+  appendTotals(varietySheet, 'TOTAL FINCA', [...totalsBySection, total]);
   return workbook.xlsx.writeBuffer();
 }
 
